@@ -1,16 +1,42 @@
-import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import UserProfile from '../screens/UserProfile'; // Replace with your actual screen components
+import React from "react";
+import { createStackNavigator } from '@react-navigation/stack'
+
+import Login from "../screens/User/Login";
+import Register from "../screens/User/Register";
+import UserProfile from "../screens/User/UserProfile";
 
 const Stack = createStackNavigator();
 
-function UserNavigator() {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen name="Profile" component={UserProfile} options={{ headerShown: false }} />
-      {/* Add more screens here */}
-    </Stack.Navigator>
-  );
+const UserNavigator = (props) => {
+    return (
+        <Stack.Navigator>
+            <Stack.Screen
+                name="Login"
+                component={Login}
+                options={{
+                    headerShown: false,
+                }}
+            />
+
+            <Stack.Screen
+                name="Register"
+                component={Register}
+                options={{
+                    headerShown: false,
+                }}
+            />
+
+            <Stack.Screen
+                name="User Profile"
+                component={UserProfile}
+                options={{
+                    headerShown: false
+                }}
+            />
+
+        </Stack.Navigator>
+    )
+
 }
 
 export default UserNavigator;

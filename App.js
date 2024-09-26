@@ -1,14 +1,17 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import Auth from "./Context/Apps/Auth";
 import Main from './Navigator/Main'; // Adjust the path based on where you have your Main navigator
 
 export default function App() {
   return (
-    <NavigationContainer>
+    <Auth>
+      <NavigationContainer>
       <Main />
-      <StatusBar style="auto" />
     </NavigationContainer>
+    </Auth>
+
   );
 }
 

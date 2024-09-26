@@ -1,10 +1,10 @@
 import React, { useContext } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/FontAwesome";
-import HomeNavigator from "./HomeNavigator";
+import HomeScreen from "../screens/HomeScreen";
 import UserNavigator from "./UserNavigator";
 // import AdminNavigator from "./AdminNavigator";
-import AuthGlobal from "../Context/Store/AuthGlobal";
+import AuthGlobal from "../Context/Apps/AuthGlobal";
 
 const Tab = createBottomTabNavigator();
 
@@ -21,7 +21,7 @@ const Main = () => {
         >
             <Tab.Screen
                 name="Home"
-                component={HomeNavigator}
+                component={HomeScreen}
                 options={{
                     tabBarShowLabel: false,
                     tabBarIcon: ({ color }) => {
@@ -34,7 +34,7 @@ const Main = () => {
                     }
                 }}
             />
-            <Tab.Screen
+            {/* <Tab.Screen
                 name="Forum"
                 component={ForumNavigator} // Use the ForumNavigator here
                 options={{
@@ -51,7 +51,7 @@ const Main = () => {
                         );
                     }
                 }}
-            />
+            /> */}
             {/* {context.stateUser.user.isAdmin && (
                 <Tab.Screen
                     name="Admin"
@@ -69,14 +69,14 @@ const Main = () => {
                 />
             )} */}
 
-            <Tab.Screen
-                name="User"
+             <Tab.Screen
+               name="User"
                 component={UserNavigator}
-                options={{
-                    tabBarIcon: ({ color }) => {
-                        return <Icon
+               options={{
+                tabBarIcon: ({ color }) => {
+                  return <Icon
                             name="user"
-                            style={{ position: "relative" }}
+                          style={{ position: "relative" }}
                             color={color}
                             size={30}
 
