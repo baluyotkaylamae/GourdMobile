@@ -8,10 +8,9 @@ export default function App() {
   return (
     <Auth>
       <NavigationContainer>
-      <Main />
-    </NavigationContainer>
+        <Main />
+      </NavigationContainer>
     </Auth>
-
   );
 }
 

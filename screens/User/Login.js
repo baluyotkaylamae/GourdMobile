@@ -1,29 +1,24 @@
 import InputUser from "../../Shared/Form/InputUser";
 import React, { useState, useContext, useEffect } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import FormContainer from "../../Shared/Form/FormContainer";
-import { Button } from "native-base";
 import { useNavigation } from '@react-navigation/native';
 import Error from '../../Shared/Error';
 import AuthGlobal from '../../Context/Store/AuthGlobal';
 import { loginUser } from '../../Context/Actions/Auth.actions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EasyButton from "../../Shared/StyledComponents/EasyButton";
-
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-
 import Header from "../../Shared/Header";
 import WelcomeLogin from "../../Shared/WelcomeLogin";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
-// import bglog from "../../assets/bglog.png";
 
 const Login = (props) => {
   const context = useContext(AuthGlobal);
   const navigation = useNavigation();
 
-
-  //google
+  // State for Google authentication
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -39,53 +34,64 @@ const Login = (props) => {
   });
 
   useEffect(() => {
-    handleEffect();
-  }, [response, token]);
-
-  async function handleEffect() {
-    const user = await getLocalUser();
-    console.log("user", user);
-    if (!user) {
+    const handleAuthResponse = async () => {
+      const user = await getLocalUser();
+      console.log("Local user:", user);
+  
       if (response?.type === "success") {
-        // setToken(response.authentication.accessToken);
-        getUserInfo(response.authentication.accessToken);
+        const { authentication } = response;
+        console.log("Authentication response:", authentication);
+  
+        if (authentication?.accessToken) {
+          const accessToken = authentication.accessToken;
+          setToken(accessToken);
+          await getUserInfo(accessToken);
+        } else {
+          console.log("No access token found in authentication response.");
+        }
+      } else {
+        console.log("Authentication response not successful or user is already loaded.");
       }
-    } else {
-      setUserInfo(user);
-      console.log("loaded locally");
-    }
-  }
+    };
+  
+    handleAuthResponse();
+  }, [response]);
+  
 
   const getLocalUser = async () => {
     const data = await AsyncStorage.getItem("@user");
-    if (!data) return null;
-    return JSON.parse(data);
+    return data ? JSON.parse(data) : null; // Return null if no data
   };
 
   const getUserInfo = async (token) => {
-    if (!token) return;
+    if (!token) return; // If token is not provided, exit the function
     try {
-      const response = await fetch(
-        "https://www.googleapis.com/userinfo/v2/me",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
+      const response = await fetch("https://www.googleapis.com/userinfo/v2/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      console.log("User info response status:", response.status);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user info');
+      }
+  
       const user = await response.json();
+      console.log("User info retrieved:", user);
       await AsyncStorage.setItem("@user", JSON.stringify(user));
       setUserInfo(user);
     } catch (error) {
+      console.error("Error fetching user info:", error);
     }
   };
+  
 
   useEffect(() => {
-    if (context.stateUser.isAuthenticated === true) {
+    if (context && context.stateUser?.isAuthenticated) {
       navigation.navigate("User", { screen: "User Profile" });
     }
-  }, [context.stateUser.isAuthenticated]);
+  }, [context, context?.stateUser?.isAuthenticated]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const user = {
       email,
       password,
@@ -94,8 +100,12 @@ const Login = (props) => {
     if (email === "" || password === "") {
       setError("Please fill in your credentials");
     } else {
-      loginUser(user, context.dispatch);
-      // console.log("error")
+      try {
+        await loginUser(user, context.dispatch); // Await the loginUser function
+        setError(''); // Clear any previous error message
+      } catch (err) {
+        setError(err.message || "Login failed. Please try again."); // Handle error
+      }
     }
   };
 
@@ -105,12 +115,7 @@ const Login = (props) => {
     }
   };
 
-  const handleRemoveLocalStore = async () => {
-    await AsyncStorage.removeItem("@user");
-  };
-
   const handleForgetPassword = () => {
-    // Navigate to forget password screen
     navigation.navigate("ForgetPassword");
   };
 
@@ -142,28 +147,25 @@ const Login = (props) => {
       </TouchableOpacity>
       <View style={styles.buttonGroup}>
         {error ? <Error message={error} /> : null}
-
         <EasyButton
           login
           primary
           onPress={handleSubmit}
           style={styles.loginButton}
-        ><Text style={{ color: "white", fontWeight: "bold", letterSpacing: 1 }}>Sign in</Text>
+        >
+          <Text style={styles.loginButtonText}>Sign in</Text>
         </EasyButton>
       </View>
       <View style={[{ marginTop: 40 }, styles.buttonGroup]}>
         <Text
           onPress={handleCreateAccount}
-          style={[
-            styles.registerButton,
-            { color: "black", fontWeight: "bold", letterSpacing: 0, marginTop: -15 }
-          ]}
+          style={styles.registerButton}
         >
           Create new account
         </Text>
       </View>
 
-      <Text style={[styles.middleText, { color: "#664229", fontWeight: "bold" }]}>Or continue with</Text>
+      <Text style={styles.middleText}>Or continue with</Text>
       <View style={styles.container}>
         {!userInfo ? (
           <TouchableOpacity onPress={handleGoogleSignIn} style={styles.googleButtonContainer}>
@@ -171,36 +173,26 @@ const Login = (props) => {
           </TouchableOpacity>
         ) : (
           <View style={styles.container}>
-            {userInfo ? (
+            {userInfo && (
               <View style={styles.card}>
-                {userInfo?.picture && (
-                  <Image source={{ uri: userInfo?.picture }} style={styles.image} />
+                {userInfo.picture && (
+                  <Image source={{ uri: userInfo.picture }} style={styles.image} />
                 )}
                 <Text style={styles.text}>Email: {userInfo.email || ''}</Text>
-                <Text style={styles.text}>
-                  Verified: {userInfo.verified_email ? "yes" : "no"}
-                </Text>
+                <Text style={styles.text}>Verified: {userInfo.verified_email ? "yes" : "no"}</Text>
                 <Text style={styles.text}>Name: {userInfo.name || ''}</Text>
               </View>
-            ) : (
-              <TouchableOpacity onPress={handleGoogleSignIn} style={styles.googleButtonContainer}>
-                <FontAwesomeIcon name="google" size={20} color="white" />
-              </TouchableOpacity>
             )}
           </View>
         )}
-        {/* <TouchableOpacity onPress={handleRemoveLocalStore} style={styles.removeLocalStoreButtonContainer}>
-          <Text style={styles.removeLocalStoreButtonText}>Remove Local Store</Text>
-        </TouchableOpacity> */}
-
       </View>
       <View style={styles.rectangle3}></View>
       <View style={styles.rectangle4}></View>
       <View style={styles.ellipse2}></View>
       <View style={styles.ellipse1}></View>
     </FormContainer>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   buttonGroup: {
@@ -211,12 +203,22 @@ const styles = StyleSheet.create({
     marginTop: 35,
     marginBottom: 20,
     alignSelf: "center",
+    color: "#664229",
+    fontWeight: "bold",
   },
   loginButton: {
     backgroundColor: "#664229",
   },
+  loginButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
   registerButton: {
-    backgroundColor: "#FFFFFF",
+    color: "black",
+    fontWeight: "bold",
+    letterSpacing: 0,
+    marginTop: -15,
   },
   container: {
     alignItems: 'center',
@@ -252,30 +254,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 30,
   },
-  googleButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 8,
-    textAlign: 'center',
-  },
-  removeLocalStoreButtonContainer: {
-    width: "50%",
-    backgroundColor: "#B99960",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
-  },
-  removeLocalStoreButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: 'center',
-  },
   forgetPassword: {
     color: "#664229",
     marginTop: 5,
@@ -284,38 +262,32 @@ const styles = StyleSheet.create({
   rectangle3: {
     width: 372,
     height: 372,
-    left: 169.40,
-    top: 930.70,
     position: "absolute",
-    transform: "rotate(27.09deg)",
-    transformOrigin: "0 0",
-    border: "2px #F1F4FF solid",
+    transform: [{ rotate: "27.09deg" }],
+    borderColor: "#F1F4FF",
+    borderWidth: 2,
   },
   rectangle4: {
     width: 372,
     height: 372,
-    left: 58.30,
-    top: 990,
     position: "absolute",
-    border: "2px #F1F4FF solid",
+    borderColor: "#F1F4FF",
+    borderWidth: 2,
   },
   ellipse2: {
     width: 496,
     height: 496,
-    left: 387.30,
-    top: 185,
     position: "absolute",
-    borderRadius: "9999px",
-    border: "3px #F8F9FF solid",
+    borderRadius: 9999,
+    borderColor: "#F8F9FF",
+    borderWidth: 3,
   },
   ellipse1: {
     width: 635,
     height: 635,
-    left: 30,
-    top: 10,
     position: "absolute",
-    background: "black",
-    borderRadius: "9999px",
+    backgroundColor: "black",
+    borderRadius: 9999,
   },
 });
 
