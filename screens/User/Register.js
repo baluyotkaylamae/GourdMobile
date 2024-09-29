@@ -289,11 +289,7 @@ const Register = (props) => {
                     </Text>
                 </View>
                 <View>
-                    {/* <Button variant={"ghost"}
-                        onPress={() => navigation.navigate("Login")}
-                    >
-                        <Text style={{ color: "blue" }}>Back to Login</Text>
-                    </Button> */}
+                
                 </View>
             </FormContainer>
         </KeyboardAwareScrollView>

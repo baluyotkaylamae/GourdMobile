@@ -1,146 +1,92 @@
+// UserProfile.js
 import React, { useContext, useState, useCallback } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 import baseURL from "../../assets/common/baseurl";
 import AuthGlobal from "../../Context/Store/AuthGlobal";
-import { logoutUser } from "../../Context/Actions/Auth.actions";
-import InputPrfl from "../../Shared/Form/InputPrfl";
+import { logoutUser } from "../../Context/Actions/Auth.actions"; // Ensure this path is correct
 
-const UserProfile = (props) => {
+const UserProfile = () => {
     const context = useContext(AuthGlobal);
-    const [userProfile, setUserProfile] = useState('');
-    const [image, setImage] = useState(null);
-    const [editing, setEditing] = useState(false);
+    const [userProfile, setUserProfile] = useState({});
+    const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
 
     useFocusEffect(
         useCallback(() => {
-            if (context.stateUser.isAuthenticated === false || context.stateUser.isAuthenticated === null) {
-                navigation.navigate("Login");
-            }
-            AsyncStorage.getItem("jwt")
-                .then((res) => {
-                    axios
-                        .get(`${baseURL}users/${context.stateUser.user.userId}`, {
-                            headers: { Authorization: `Bearer ${res}` },
-                        })
-                        .then((user) => {
-                            setUserProfile(user.data);
-                            setImage(user.data.image);
+            const fetchUserProfile = async () => {
+                setLoading(true);
+                try {
+                    const token = await AsyncStorage.getItem("jwt");
+                    const userId = context.stateUser.user?.userId;
+                    if (userId && token) {
+                        const response = await axios.get(`${baseURL}users/${userId}`, {
+                            headers: { Authorization: `Bearer ${token}` },
                         });
-                })
-                .catch((error) => console.log(error));
-            return () => {
-                setUserProfile('');
+                        setUserProfile(response.data.user);
+                    } else {
+                        console.error("User ID or token is missing");
+                    }
+                } catch (error) {
+                    console.error("Error fetching user profile:", error.message || error);
+                } finally {
+                    setLoading(false);
+                }
             };
+
+            if (!context.stateUser.isAuthenticated) {
+                navigation.navigate("Login");
+                return;
+            }
+
+            fetchUserProfile();
         }, [context.stateUser.isAuthenticated])
     );
 
-    const handleEditProfile = () => {
-        setEditing(true);
+    const handleLogout = async () => {
+        await AsyncStorage.removeItem("jwt");
+        logoutUser(context.dispatch);
     };
 
-    const handleSaveProfile = () => {
-        AsyncStorage.getItem("jwt")
-            .then((token) => {
-                axios
-                    .put(`${baseURL}users/${context.stateUser.user.userId}`, userProfile, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    })
-                    .then((response) => {
-                        console.log("Profile updated successfully:", response.data);
-                        setEditing(false);
-                    })
-                    .catch((error) => {
-                        console.error("Error updating profile:", error);
-                    });
-            })
-            .catch((error) => {
-                console.error("Error retrieving JWT token:", error);
-            });
-    };
-
-    const handleChangeName = (text) => {
-        setUserProfile({ ...userProfile, name: text });
-    };
-
-    const handleChangeEmail = (text) => {
-        setUserProfile({ ...userProfile, email: text });
-    };
-
-    const handleChangePhone = (text) => {
-        setUserProfile({ ...userProfile, phone: text });
-    };
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007BFF" />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
-            <View style={styles.profileContainer}>
-                <Image
-                    source={{ uri: image ? image : 'https://via.placeholder.com/139x139' }}
-                    style={styles.profileImage}
-                />
+            <Image
+                source={{ uri: userProfile.image || 'https://via.placeholder.com/100' }} // Fallback image for testing
+                style={styles.profileImage}
+                onError={(error) => console.error("Image loading error:", error.nativeEvent.error)} // Log error if image fails to load
+            />
+            <View style={styles.infoContainer}>
+                <Text style={styles.infoLabel}>Name: {userProfile.name || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>Email: {userProfile.email || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>Phone: {userProfile.phone || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>Street: {userProfile.street || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>Apartment: {userProfile.apartment || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>Zip: {userProfile.zip || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>City: {userProfile.city || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>Country: {userProfile.country || 'N/A'}</Text>
             </View>
-
-            <View>
-                <View style={styles.infoContainer}>
-                    <Text style={styles.infoLabel}>Name</Text>
-                    <View style={styles.inputContainer}>
-                        <InputPrfl
-                            placeholder="Enter your name"
-                            onChangeText={handleChangeName}
-                            value={editing ? userProfile.name : userProfile ? userProfile.name : ''}
-                            editable={editing}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.infoContainer}>
-                    <Text style={styles.infoLabel}>Email</Text>
-                    <View style={styles.inputContainer}>
-                        <InputPrfl
-                            placeholder="Enter your email"
-                            onChangeText={handleChangeEmail}
-                            value={editing ? userProfile.email : userProfile ? userProfile.email : ''}
-                            editable={editing}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.infoContainer}>
-                    <Text style={styles.infoLabel}>Phone Number</Text>
-                    <View style={styles.inputContainer}>
-                        <InputPrfl
-                            placeholder="Enter your phone number"
-                            onChangeText={handleChangePhone}
-                            value={editing ? userProfile.phone : userProfile ? userProfile.phone : ''}
-                            editable={editing}
-                        />
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.actionContainer}>
-                {editing ? (
-                    <TouchableOpacity style={styles.updateProfileButton} onPress={handleSaveProfile}>
-                        <Text style={styles.updateProfileText}>Save Profile</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity style={styles.updateProfileButton} onPress={handleEditProfile}>
-                        <Text style={styles.updateProfileText}>Edit Profile</Text>
-                    </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                    style={styles.logoutContainer}
-                    onPress={() => {
-                        AsyncStorage.removeItem("jwt");
-                        logoutUser(context.dispatch);
-                    }}
-                >
-                    <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+                style={styles.editProfileButton}
+                onPress={() => navigation.navigate("UpdateProfile", { userProfile })}
+            >
+                <Text style={styles.editProfileText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+            >
+                <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
         </View>
     );
 };
@@ -151,53 +97,64 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5', // Light background for better contrast
     },
-    profileContainer: {
-        marginBottom: 20,
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     profileImage: {
-        width: 139,
-        height: 139,
-        borderRadius: 70,
-        backgroundColor: '#B99960',
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        marginBottom: 20,
+        borderColor: '#007BFF', // Border color for aesthetic
+        borderWidth: 2,
+        backgroundColor: '#ffffff', // Fallback background for image
     },
     infoContainer: {
         marginBottom: 20,
+        width: '100%',
+        backgroundColor: '#ffffff', // White background for info section
+        padding: 20,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2, // For Android shadow
     },
     infoLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 5,
+        color: '#262422',
+        fontSize: 16, // Slightly larger font for better readability
+        fontWeight: '500', // Lighter font weight for a modern look
+        marginVertical: 5,
     },
-    inputContainer: {
-        flexDirection: 'row',
+    editProfileButton: {
+        backgroundColor: '#007BFF',
+        padding: 10,
+        borderRadius: 5,
         alignItems: 'center',
+        marginBottom: 10,
+        width: '100%', // Full width for buttons
+        paddingVertical: 12, // More padding for buttons
     },
-    actionContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 20,
-    },
-    updateProfileButton: {
-        backgroundColor: '#664229',
-        padding: 10,
-        borderRadius: 5,
-        marginRight: 10,
-    },
-    updateProfileText: {
+    editProfileText: {
         color: 'white',
-        fontWeight: '600',
+        fontWeight: 'bold', // Bold text for buttons
     },
-    logoutContainer: {
+    logoutButton: {
+        backgroundColor: '#FF4D4D',
         padding: 10,
         borderRadius: 5,
-        borderColor: '#664229',
-        borderWidth: 1,
+        alignItems: 'center',
+        width: '100%',
+        paddingVertical: 12, // More padding for buttons
     },
     logoutText: {
-        color: '#664229',
-        fontWeight: '600',
+        color: 'white',
+        fontWeight: 'bold', // Bold text for buttons
     },
 });
 

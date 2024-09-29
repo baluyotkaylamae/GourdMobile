@@ -1,8 +1,9 @@
+
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import Auth from "./Context/Apps/Auth";
-import Main from './Navigator/Main'; // Adjust the path based on where you have your Main navigator
+import Main from './Navigator/Main'; // Adjust the path
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
     </Auth>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
