@@ -117,12 +117,26 @@ const styles = StyleSheet.create({
     marginTop: 35,
     marginBottom: 20,
     alignSelf: "center",
+    color: "#664229", // Darker color for contrast
+    fontWeight: "bold",
   },
   loginButton: {
-    backgroundColor: "#664229",
+    backgroundColor: "#3baea0", // Second color for the button
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    width: "100%",
+    alignItems: "center",
+  },
+  loginButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    letterSpacing: 1,
   },
   registerButton: {
-    backgroundColor: "#FFFFFF",
+    color: "#664229", // Color for register button
+    fontWeight: "bold",
+    marginVertical: 10,
   },
   container: {
     alignItems: 'center',
@@ -131,19 +145,18 @@ const styles = StyleSheet.create({
   },
   googleButtonContainer: {
     width: "20%",
-    backgroundColor: "red",
+    backgroundColor: "#FF4D4D", // Keeping the same color for Google sign-in button
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: -30,
     justifyContent: "center",
     marginBottom: 30,
   },
   forgetPassword: {
-    color: "#664229",
+    color: "#118a7e", // Third color for text
     marginTop: 5,
-    marginLeft: 170,
+    textAlign: "center",
   },
 });
 

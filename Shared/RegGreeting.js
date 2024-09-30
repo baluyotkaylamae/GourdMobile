@@ -7,7 +7,7 @@ const RegGreeting = () => {
             <Text>
                 <Text style={[styles.createText, { marginLeft: 10 }]}>Create an account so you can explore</Text>
                 {'\n'}
-                <Text style={styles.drinksText}>and get a taste of our drinks</Text>
+                <Text style={styles.gourdtext}>Our GOURDIFY</Text>
             </Text>
         </View>
     );
@@ -28,8 +28,8 @@ const styles = StyleSheet.create({
         fontWeight: 'normal',
         marginLeft: 20,
     },
-    drinksText: {
-        color: '#B99960',
+    gourdtext: {
+        color: '#3baea0',
         fontSize: 17,
         fontWeight: 'bold',
     },

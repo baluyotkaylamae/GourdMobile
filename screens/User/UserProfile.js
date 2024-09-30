@@ -90,14 +90,13 @@ const UserProfile = () => {
         </View>
     );
 };
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#f5f5f5', // Light background for better contrast
+        backgroundColor: '#93e4c1', // Using the first color for background
     },
     loadingContainer: {
         flex: 1,
@@ -109,7 +108,7 @@ const styles = StyleSheet.create({
         height: 120,
         borderRadius: 60,
         marginBottom: 20,
-        borderColor: '#007BFF', // Border color for aesthetic
+        borderColor: '#3baea0', // Using the second color for border
         borderWidth: 2,
         backgroundColor: '#ffffff', // Fallback background for image
     },
@@ -126,13 +125,13 @@ const styles = StyleSheet.create({
         elevation: 2, // For Android shadow
     },
     infoLabel: {
-        color: '#262422',
+        color: '#118a7e', // Using the third color for text
         fontSize: 16, // Slightly larger font for better readability
         fontWeight: '500', // Lighter font weight for a modern look
         marginVertical: 5,
     },
     editProfileButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#1f6f78', // Using the fourth color for button
         padding: 10,
         borderRadius: 5,
         alignItems: 'center',
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold', // Bold text for buttons
     },
     logoutButton: {
-        backgroundColor: '#FF4D4D',
+        backgroundColor: '#FF4D4D', // Keeping the same color for logout button
         padding: 10,
         borderRadius: 5,
         alignItems: 'center',

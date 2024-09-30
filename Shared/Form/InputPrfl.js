@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         height: 50,
-        backgroundColor: '#FFFFFF', // White with 90% opacity
+        backgroundColor: '#FFFFFF', 
         marginVertical: 10,
         borderRadius: 8,
         paddingHorizontal: 15,
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
         color: '#2D3748',
         borderWidth: 1,
         borderColor: '#CBD5E0',
-        elevation: 2, // Adds a shadow
+        elevation: 2, 
     },
 });
 

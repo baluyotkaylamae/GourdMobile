@@ -5,9 +5,9 @@ const Greeting = () => {
   return (
     <View style={styles.greetingContainer}>
       <Text>
-        <Text style={styles.welcomeText}>Welcome Back</Text>
+        <Text style={styles.welcomeText}>Welcome</Text>
         {'\n'}
-        <Text style={styles.drinksText}>You've been missed!</Text>
+        <Text style={styles.Gourdtext}>Farmers!</Text>
       </Text>
     </View>
   );
@@ -26,8 +26,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'normal',
   },
-  drinksText: {
-    color: '#B99960',
+  Gourdtext: {
+    color: '#3baea0',
     fontSize: 20,
     fontWeight: 'bold',
   },

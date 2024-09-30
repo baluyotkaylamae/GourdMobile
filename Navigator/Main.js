@@ -5,13 +5,17 @@ import HomeScreen from "../screens/HomeScreen";
 import UserNavigator from "./UserNavigator";
 // import AdminNavigator from "./AdminNavigator"; // Uncomment if you have AdminNavigator
 import AuthGlobal from "../Context/Store/AuthGlobal";
+import LoginScreen from "../screens/User/Login"; 
 
 const Tab = createBottomTabNavigator();
 
 const Main = () => {
   const context = useContext(AuthGlobal);
 
-  return (
+  // Check if the user is authenticated
+  const isAuthenticated = context.stateUser && context.stateUser.isAuthenticated;
+
+  return isAuthenticated ? (
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
@@ -30,10 +34,11 @@ const Main = () => {
         }}
       />
 
+      {/* Uncomment if you have AdminNavigator */}
       {/* {context.stateUser && context.stateUser.user && context.stateUser.user.isAdmin && (
         <Tab.Screen
           name="Admin"
-          component={AdminNavigator} // Uncomment AdminNavigator if you have it
+          component={AdminNavigator}
           options={{
             tabBarIcon: ({ color }) => (
               <Icon name="cog" color={color} size={30} />
@@ -52,6 +57,8 @@ const Main = () => {
         }}
       />
     </Tab.Navigator>
+  ) : (
+    <LoginScreen /> 
   );
 };
 
