@@ -9,6 +9,7 @@ import UserProfileScreen from "../screens/User/UserProfile";
 import RegisterScreen from "../screens/User/Register";
 import AuthGlobal from "../Context/Store/AuthGlobal";
 import LoginScreen from "../screens/User/Login";
+import CreatePost from '../screens/Post/createPost';
 import AdminNavigator from "./AdminNavigator";
 
 const Stack = createNativeStackNavigator();
@@ -26,6 +27,11 @@ const Main = () => {
             name="MainTabs"
             component={MainTabs}
             options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CreatePost"
+            component={CreatePost}
+            options={{ title: 'Create Post' }} 
           />
         </>
       ) : (
