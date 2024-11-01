@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text } from 'react-native'; // Importing Text for rendering strings
+import { View, Text, StyleSheet } from 'react-native'; 
 import Icon from "react-native-vector-icons/FontAwesome";
 import HomeScreen from "../screens/HomeScreen";
 import UserNavigator from "./UserNavigator";
@@ -33,10 +33,12 @@ const Main = () => {
           <Stack.Screen
             name="Login"
             component={LoginScreen}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Register"
             component={RegisterScreen}
+            options={{ headerShown: false }}
           />
         </>
       )}
@@ -53,7 +55,9 @@ const MainTabs = () => {
       screenOptions={{
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: "#664229",
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: "#3baea0", 
+        tabBarInactiveTintColor: "#a3a3a3", 
       }}
     >
       <Tab.Screen
@@ -70,7 +74,7 @@ const MainTabs = () => {
           tabBarIcon: ({ color }) => <Icon name="user" color={color} size={30} />,
         }}
       />
-      {/* Render Admin tab only if user is an admin */}
+   
       {context.stateUser && context.stateUser.user && context.stateUser.user.isAdmin && (
         <Tab.Screen
           name="Admin"
@@ -90,5 +94,16 @@ const MainTabs = () => {
     </Tab.Navigator>
   );
 };
+
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: "#ffffff",
+    borderTopWidth: 0, 
+    elevation: 5, 
+    height: 70, 
+    paddingBottom: 10, 
+  },
+});
 
 export default Main;

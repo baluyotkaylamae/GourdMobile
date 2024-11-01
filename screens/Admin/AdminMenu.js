@@ -27,36 +27,37 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         padding: 20,
-        backgroundColor: "#e8faf6", 
+        backgroundColor: "#e8faf6",
     },
     title: {
-        fontSize: 32,
-        fontWeight: "bold",
-        color: "#2c3e50", 
-        marginBottom: 40,
-        textTransform: "uppercase", 
-        letterSpacing: 2,
+        fontSize: 36, // Increased font size for emphasis
+        fontWeight: "700", // Changed to semi-bold for better readability
+        color: "#2c3e50",
+        marginBottom: 50,
+        textTransform: "uppercase",
+        letterSpacing: 3,
+        textAlign: "center", // Centered text alignment
     },
     button: {
-        backgroundColor: "#55c2a7", 
-        borderRadius: 30, 
-        paddingVertical: 15, 
-        paddingHorizontal: 20,
-        marginVertical: 10,
+        backgroundColor: "#55c2a7",
+        borderRadius: 30,
+        paddingVertical: 15,
+        marginVertical: 12, // Adjusted margin for better spacing
         width: "80%",
         alignItems: "center",
-        shadowColor: "#000", 
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 5,
-        elevation: 3, 
+        elevation: 4, // Increased elevation for better shadow effect
+        transition: 'background-color 0.3s ease', // Smooth transition for hover effect (if applicable)
     },
     buttonText: {
-        color: "#fff", 
+        color: "#fff",
         fontSize: 18,
-        fontWeight: "bold",
-        textTransform: "uppercase", 
-        letterSpacing: 1.5, 
+        fontWeight: "600", // Changed to medium for a cleaner look
+        textTransform: "uppercase",
+        letterSpacing: 1.2, // Adjusted letter spacing
     },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import InputUser from "../../Shared/Form/InputUser";
 import FormContainer from "../../Shared/Form/FormContainer";
 import { useNavigation } from '@react-navigation/native';
@@ -11,7 +11,9 @@ import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import Header from "../../Shared/Header";
 import WelcomeLogin from "../../Shared/WelcomeLogin";
-import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
+
+// Import Google logo
+import googleLogo from "../../assets/google.png"; // Adjust the path as necessary
 
 const Login = (props) => {
   const context = useContext(AuthGlobal);
@@ -101,12 +103,12 @@ const Login = (props) => {
       <Text style={[styles.middleText, { color: "#664229", fontWeight: "bold" }]}>Or continue with</Text>
       <View style={styles.container}>
         <TouchableOpacity onPress={handleGoogleSignIn} style={styles.googleButtonContainer}>
-          <FontAwesomeIcon name="google" size={20} color="white" />
+          <Image source={googleLogo} style={styles.googleIcon} />
         </TouchableOpacity>
       </View>
     </FormContainer>
   );
-}
+};
 
 const styles = StyleSheet.create({
   buttonGroup: {
@@ -145,13 +147,17 @@ const styles = StyleSheet.create({
   },
   googleButtonContainer: {
     width: "20%",
-    backgroundColor: "#FF4D4D", // Keeping the same color for Google sign-in button
+    backgroundColor: "#f6f6f6", // Keeping the same color for Google sign-in button
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 30,
+  },
+  googleIcon: {
+    width: 24, // Adjust size as needed
+    height: 24, // Adjust size as needed
   },
   forgetPassword: {
     color: "#118a7e", // Third color for text

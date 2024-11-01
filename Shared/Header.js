@@ -6,7 +6,7 @@ const Header = () => {
         //<View style={styles.header}>
         <SafeAreaView style={styles.header}>
             <Image
-                // source={require("../assets/logolanding.png")}
+                source={require("../assets/logo.png")}
                 resizeMode="contain"
                 style={{ height: 70 }}
             />
@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
         alignContent: "center",
         justifyContent: "center",
         padding: 20,
-        marginTop: -60,
+        marginTop: 50,
         marginBottom: -10,
     }
 })

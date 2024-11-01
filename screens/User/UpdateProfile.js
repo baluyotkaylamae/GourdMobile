@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react'; 
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome";
 import InputPrfl from "../../Shared/Form/InputPrfl";
@@ -7,7 +7,7 @@ import axios from "axios";
 import baseURL from "../../assets/common/baseurl";
 import AuthGlobal from "../../Context/Store/AuthGlobal";
 import * as ImagePicker from "expo-image-picker";
-import { Camera } from 'expo-camera'; 
+import { Camera } from 'expo-camera';
 
 const UpdateProfile = ({ route, navigation }) => {
     const { userProfile } = route.params;
@@ -102,16 +102,16 @@ const UpdateProfile = ({ route, navigation }) => {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
                 {loading ? (
-                    <ActivityIndicator size="large" color="#0000ff" />
+                    <ActivityIndicator size="large" color="#007BFF" />
                 ) : (
                     <>
                         <TouchableOpacity onPress={handleImagePick}>
                             <Image
-                                source={{ uri: updatedProfile.image || 'https://example.com/default-image.png' }} // Use your default image URL
+                                source={{ uri: updatedProfile.image || 'https://via.placeholder.com/120' }} // Use your default image URL
                                 style={styles.profileImage}
                             />
                         </TouchableOpacity>
-                        
+
                         {/* Buttons for Image Picker and Camera */}
                         <View style={styles.imageContainer}>
                             <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
@@ -135,6 +135,11 @@ const UpdateProfile = ({ route, navigation }) => {
                         <TouchableOpacity style={styles.saveProfileButton} onPress={handleSaveProfile}>
                             <Text style={styles.saveProfileText}>Save Profile</Text>
                         </TouchableOpacity>
+                        
+                        {/* Back to Profile Button */}
+                        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("User Profile")}>
+                            <Text style={styles.backButtonText}>Cancel</Text>
+                        </TouchableOpacity>
                     </>
                 )}
             </View>
@@ -147,6 +152,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#EAF6F6',
     },
     container: {
         flex: 1,
@@ -155,12 +161,41 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 30,
         backgroundColor: 'white',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
+    },
+    backButton: {
+        alignItems: 'center',
+        backgroundColor: 'red', 
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginTop: 20, 
+        width: '100%', 
+    },
+    backButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 10,
     },
     profileImage: {
         width: 120,
         height: 120,
         borderRadius: 60,
         marginBottom: 20,
+        borderColor: '#3baea0',
+        borderWidth: 2,
+        backgroundColor: '#ffffff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 2,
     },
     imageContainer: {
         flexDirection: 'row',
@@ -168,23 +203,28 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     imagePicker: {
-        backgroundColor: "#664229",
-        padding: 8,
+        backgroundColor: "#1f6f78",
+        padding: 10,
         borderRadius: 100,
         marginHorizontal: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 2,
     },
     infoContainer: {
         marginBottom: 15,
         width: '100%',
     },
     infoLabel: {
-        color: '#262422',
+        color: '#118a7e',
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 8,
     },
     saveProfileButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#118a7e',
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 8,

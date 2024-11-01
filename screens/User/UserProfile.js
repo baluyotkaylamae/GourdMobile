@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#93e4c1', // Using the first color for background
+        backgroundColor: '#EAF6F6', 
     },
     loadingContainer: {
         flex: 1,
@@ -109,52 +109,57 @@ const styles = StyleSheet.create({
         height: 120,
         borderRadius: 60,
         marginBottom: 20,
-        borderColor: '#3baea0', // Using the second color for border
+        borderColor: '#3baea0', 
         borderWidth: 2,
-        backgroundColor: '#ffffff', // Fallback background for image
+        backgroundColor: '#ffffff', 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 2, 
     },
     infoContainer: {
         marginBottom: 20,
         width: '100%',
-        backgroundColor: '#ffffff', // White background for info section
+        backgroundColor: '#ffffff', 
         padding: 20,
         borderRadius: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 2, // For Android shadow
+        elevation: 3, 
     },
     infoLabel: {
-        color: '#118a7e', // Using the third color for text
-        fontSize: 16, // Slightly larger font for better readability
-        fontWeight: '500', // Lighter font weight for a modern look
+        color: '#118a7e',
+        fontSize: 16,
+        fontWeight: '500',
         marginVertical: 5,
     },
     editProfileButton: {
-        backgroundColor: '#1f6f78', // Using the fourth color for button
-        padding: 10,
+        backgroundColor: '#1f6f78', 
+        padding: 12,
         borderRadius: 5,
         alignItems: 'center',
         marginBottom: 10,
-        width: '100%', // Full width for buttons
-        paddingVertical: 12, // More padding for buttons
+        width: '100%', 
     },
     editProfileText: {
         color: 'white',
-        fontWeight: 'bold', // Bold text for buttons
+        fontWeight: 'bold', 
+        fontSize: 16,
     },
     logoutButton: {
-        backgroundColor: '#FF4D4D', // Keeping the same color for logout button
-        padding: 10,
+        backgroundColor: '#FF4D4D', 
+        padding: 12,
         borderRadius: 5,
         alignItems: 'center',
         width: '100%',
-        paddingVertical: 12, // More padding for buttons
     },
     logoutText: {
         color: 'white',
-        fontWeight: 'bold', // Bold text for buttons
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
 
