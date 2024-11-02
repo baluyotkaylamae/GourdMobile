@@ -18,7 +18,6 @@ const UserNavigator = (props) => {
                     headerShown: false,
                 }}
             />
-
             <Stack.Screen
                 name="Register"
                 component={Register}

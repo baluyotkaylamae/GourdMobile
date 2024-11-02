@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet } from 'react-native'; 
+import { View, Text, StyleSheet } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome";
 import HomeScreen from "../screens/HomeScreen";
 import UserNavigator from "./UserNavigator";
@@ -9,7 +9,7 @@ import UserProfileScreen from "../screens/User/UserProfile";
 import RegisterScreen from "../screens/User/Register";
 import AuthGlobal from "../Context/Store/AuthGlobal";
 import LoginScreen from "../screens/User/Login";
-import CreatePost from '../screens/Post/createPost';
+import CreatePost from '../screens/Post/createPost'; // Ensure proper casing
 import AdminNavigator from "./AdminNavigator";
 
 const Stack = createNativeStackNavigator();
@@ -27,11 +27,6 @@ const Main = () => {
             name="MainTabs"
             component={MainTabs}
             options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="CreatePost"
-            component={CreatePost}
-            options={{ title: 'Create Post' }} 
           />
         </>
       ) : (
@@ -62,8 +57,8 @@ const MainTabs = () => {
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: "#3baea0", 
-        tabBarInactiveTintColor: "#a3a3a3", 
+        tabBarActiveTintColor: "#3baea0",
+        tabBarInactiveTintColor: "#a3a3a3",
       }}
     >
       <Tab.Screen
@@ -74,13 +69,21 @@ const MainTabs = () => {
         }}
       />
       <Tab.Screen
+        name="CreatePost"
+        component={CreatePost}
+        options={{
+          title: 'Create Post',
+          tabBarIcon: ({ color }) => <Icon name="plus" color={color} size={30} />, // Add icon for CreatePost
+        }}
+      />
+      <Tab.Screen
         name="User"
         component={UserNavigator}
         options={{
           tabBarIcon: ({ color }) => <Icon name="user" color={color} size={30} />,
         }}
       />
-   
+
       {context.stateUser && context.stateUser.user && context.stateUser.user.isAdmin && (
         <Tab.Screen
           name="Admin"
@@ -101,14 +104,13 @@ const MainTabs = () => {
   );
 };
 
-
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: "#ffffff",
-    borderTopWidth: 0, 
-    elevation: 5, 
-    height: 70, 
-    paddingBottom: 10, 
+    borderTopWidth: 0,
+    elevation: 5,
+    height: 70,
+    paddingBottom: 10,
   },
 });
 
