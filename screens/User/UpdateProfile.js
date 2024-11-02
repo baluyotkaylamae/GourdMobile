@@ -8,6 +8,7 @@ import baseURL from "../../assets/common/baseurl";
 import AuthGlobal from "../../Context/Store/AuthGlobal";
 import * as ImagePicker from "expo-image-picker";
 import { Camera } from 'expo-camera';
+import mime from 'mime';
 
 const UpdateProfile = ({ route, navigation }) => {
     const { userProfile } = route.params;
@@ -16,9 +17,8 @@ const UpdateProfile = ({ route, navigation }) => {
     const [loading, setLoading] = useState(false);
     const [hasCameraPermission, setHasCameraPermission] = useState(null);
 
-    // Request permissions for camera and media library
     useEffect(() => {
-        (async () => {
+        const requestPermissions = async () => {
             const cameraStatus = await Camera.requestCameraPermissionsAsync();
             setHasCameraPermission(cameraStatus.status === 'granted');
 
@@ -26,11 +26,12 @@ const UpdateProfile = ({ route, navigation }) => {
             if (mediaLibraryStatus.status !== 'granted') {
                 alert('Sorry, we need camera roll permissions to make this work!');
             }
-        })();
+        };
+        requestPermissions();
     }, []);
 
     const handleImagePick = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
+        const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
@@ -46,12 +47,13 @@ const UpdateProfile = ({ route, navigation }) => {
         if (hasCameraPermission === null) {
             alert("Camera permission is needed.");
             return;
-        } else if (hasCameraPermission === false) {
+        }
+        if (!hasCameraPermission) {
             alert("No access to the camera.");
             return;
         }
 
-        let result = await ImagePicker.launchCameraAsync({
+        const result = await ImagePicker.launchCameraAsync({
             aspect: [4, 3],
             quality: 1,
         });
@@ -66,33 +68,34 @@ const UpdateProfile = ({ route, navigation }) => {
         try {
             const token = await AsyncStorage.getItem("jwt");
             const userId = context.stateUser.user?.userId;
-
+    
             if (userId) {
-                let formData = new FormData();
-
+                const formData = new FormData();
+    
                 for (const key in updatedProfile) {
                     if (key === 'image' && updatedProfile.image) {
                         formData.append("image", {
                             uri: updatedProfile.image,
-                            type: 'image/jpeg',
-                            name: updatedProfile.image.split('/').pop(),
+                            type: mime.getType(updatedProfile.image) || 'image/jpeg',
+                            name: updatedProfile.image.split("/").pop(),
                         });
                     } else {
                         formData.append(key, updatedProfile[key]);
                     }
                 }
-
-                await axios.put(`${baseURL}users/${userId}`, formData, {
+    
+                const response = await axios.put(`${baseURL}users/${userId}`, formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
+                        'Content-Type': 'multipart/form-data',
                     },
                 });
-
+    
+                console.log("Update response:", response.data);
                 navigation.navigate("User Profile");
             }
         } catch (error) {
-            console.error("Error updating profile:", error);
+            console.error("Error updating profile:", error.response?.data || error.message);
         } finally {
             setLoading(false);
         }
@@ -107,7 +110,7 @@ const UpdateProfile = ({ route, navigation }) => {
                     <>
                         <TouchableOpacity onPress={handleImagePick}>
                             <Image
-                                source={{ uri: updatedProfile.image || 'https://via.placeholder.com/120' }} // Use your default image URL
+                                source={{ uri: updatedProfile.image || 'https://via.placeholder.com/120' }} // Default image URL
                                 style={styles.profileImage}
                             />
                         </TouchableOpacity>

@@ -79,14 +79,17 @@ const Register = () => {
     };
 
     const register = () => {
-        if (email === "" || name === "" || phone === "" || password === "") {
+        if (!email || !name || !phone || !password) {
             setError("Please fill in the form correctly");
             return;
         }
-
-        let formData = new FormData();
-        const newImageUri = "file:///" + image.split("file:/").join("");
-
+    
+        const formData = new FormData();
+        formData.append("image", {
+            uri: image,
+            type: mime.getType(image),
+            name: image.split("/").pop(),
+        });
         formData.append("name", name);
         formData.append("email", email);
         formData.append("password", password);
@@ -97,22 +100,17 @@ const Register = () => {
         formData.append("city", city);
         formData.append("country", country);
         formData.append("isAdmin", false);
-        formData.append("image", {
-            uri: newImageUri,
-            type: mime.getType(newImageUri),
-            name: newImageUri.split("/").pop(),
-        });
-
+    
         const config = {
             headers: {
                 "Content-Type": "multipart/form-data",
             },
         };
-
+    
         axios
             .post(`${baseURL}users/register`, formData, config)
             .then((res) => {
-                if (res.status === 200) {
+                if (res.status === 201) {
                     Toast.show({
                         topOffset: 60,
                         type: "success",
@@ -135,6 +133,7 @@ const Register = () => {
                 console.error(error.message);
             });
     };
+    
 
     return (
         <KeyboardAwareScrollView

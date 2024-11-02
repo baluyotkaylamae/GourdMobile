@@ -20,6 +20,7 @@ const UserProfile = () => {
                 setLoading(true);
                 try {
                     const token = await AsyncStorage.getItem("jwt");
+                    console.log("Retrieved token:", token);
                     const userId = context.stateUser.user?.userId;
                     if (userId && token) {
                         const response = await axios.get(`${baseURL}users/${userId}`, {
