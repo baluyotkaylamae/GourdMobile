@@ -1,17 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  ActivityIndicator,
-  Image,
-  TouchableOpacity,
-  Alert,
-  TextInput,
-  Modal,
-  Button,
-} from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Alert, TextInput, Modal, Button, } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import baseURL from '../assets/common/baseurl';
 import AuthGlobal from '../Context/Store/AuthGlobal';
@@ -29,6 +17,8 @@ const LandingPage = ({ navigation }) => {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
+
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     const fetchForums = async () => {
@@ -60,7 +50,10 @@ const LandingPage = ({ navigation }) => {
     };
 
     fetchForums();
-  }, []);
+  }, [refresh]); // Refresh whenever `refresh` changes
+
+  // To trigger a refresh, you can call setRefresh(!refresh) whenever you want to re-fetch the data
+
 
   const handleLikePost = async (postId) => {
     const storedToken = await AsyncStorage.getItem('jwt');
@@ -115,7 +108,7 @@ const LandingPage = ({ navigation }) => {
     } catch (error) {
       console.error('Error adding comment:', error);
     }
-  
+
 
   };
   const handleAddReply = async () => {
@@ -138,8 +131,8 @@ const LandingPage = ({ navigation }) => {
 
       if (response.ok) {
         const newReply = await response.json();
-        setReply(''); 
-        setShowReplyModal(false); 
+        setReply('');
+        setShowReplyModal(false);
 
         setForums(prevForums =>
           prevForums.map(forum =>
@@ -191,7 +184,6 @@ const LandingPage = ({ navigation }) => {
 
   const renderForumItem = ({ item }) => (
     <View style={styles.forumCard}>
-      <Text style={styles.forumTitle}>{item.title}</Text>
       <View style={styles.userContainer}>
         {item.user?.image ? (
           <Image source={{ uri: item.user.image }} style={styles.userImage} />
@@ -200,9 +192,10 @@ const LandingPage = ({ navigation }) => {
             <Text>No profile image</Text>
           </View>
         )}
-        <Text style={styles.forumUser}>Posted by: {item.user?.name || 'Unknown'}</Text>
+        <Text style={styles.forumUser}>{item.user?.name || 'Unknown'}</Text>
       </View>
       <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
+      <Text style={styles.forumTitle}>{item.title}</Text>
       <Text style={styles.forumContent}>{item.content}</Text>
 
       {item.images.length > 0 ? (
@@ -260,19 +253,22 @@ const LandingPage = ({ navigation }) => {
                                 </View>
                               </View>
                             ))}
+
                             <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
                               <Text style={styles.replyButton}>Hide Replies</Text>
                             </TouchableOpacity>
                           </>
                         ) : (
                           <>
-                            {comment.replies.slice(0, 1).map(reply => ( // Only show the first reply initially
+                            {comment.replies.slice(0, 1).map(reply => (
                               <View key={reply._id} style={styles.reply}>
+                                {/* User image */}
                                 {reply.user?.image ? (
                                   <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
                                 ) : (
                                   <Text style={styles.imagePlaceholder}>No profile image</Text>
                                 )}
+                                {/* User name */}
                                 <View style={styles.replyTextContainer}>
                                   <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
                                   <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
@@ -280,6 +276,7 @@ const LandingPage = ({ navigation }) => {
                                 </View>
                               </View>
                             ))}
+
 
 
                             <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
