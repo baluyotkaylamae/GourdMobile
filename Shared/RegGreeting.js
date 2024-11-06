@@ -5,9 +5,9 @@ const RegGreeting = () => {
     return (
         <View style={styles.greetingContainer}>
             <Text>
-                <Text style={[styles.createText, { marginLeft: 10 }]}>Create an account so you can explore</Text>
+                <Text style={[styles.createText, { marginLeft: 10 }]}>Create an account so you can explore our</Text>
                 {'\n'}
-                <Text style={styles.gourdtext}>Our GOURDIFY</Text>
+                <Text style={styles.gourdtext}>GOURDTIFY APP</Text>
             </Text>
         </View>
     );
@@ -36,3 +36,4 @@ const styles = StyleSheet.create({
 });
 
 export default RegGreeting;
+

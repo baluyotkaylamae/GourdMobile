@@ -23,12 +23,12 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     color: '#000000',
-    fontSize: 20,
+    fontSize: 30,
     fontWeight: 'normal',
   },
   Gourdtext: {
     color: '#3baea0',
-    fontSize: 20,
+    fontSize: 30,
     fontWeight: 'bold',
   },
 });

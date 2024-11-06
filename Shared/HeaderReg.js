@@ -8,7 +8,7 @@ const HeaderReg = () => {
             <Image
                 source={require("../assets/logo.png")}
                 resizeMode="contain"
-                style={{ height: 70 }}
+                style={{ height: 100 }}
             />
         </SafeAreaView>
         //</View>
@@ -21,10 +21,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignContent: "center",
         justifyContent: "center",
-        padding: 20,
-        marginTop: 20,
+        padding: 30,
+        marginTop: 30,
         marginBottom: -10,
     }
 })
 
 export default HeaderReg
+

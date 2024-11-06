@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Alert, TextInput, Modal, Button } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Alert, TextInput, Modal, Button, } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import baseURL from '../assets/common/baseurl';
 import AuthGlobal from '../Context/Store/AuthGlobal';
@@ -17,8 +17,8 @@ const LandingPage = ({ navigation }) => {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
+
   const [refresh, setRefresh] = useState(false);
-  const [newPostNotification, setNewPostNotification] = useState(false);
 
   useEffect(() => {
     const fetchForums = async () => {
@@ -40,15 +40,7 @@ const LandingPage = ({ navigation }) => {
         }
 
         const data = await response.json();
-
-        // Sort forums by createdAt in descending order (newest first)
-        const sortedData = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setForums(sortedData);
-
-        // Check if there's a new post to trigger notification
-        if (forums.length && sortedData[0]._id !== forums[0]._id) {
-          setNewPostNotification(true);
-        }
+        setForums(data);
       } catch (error) {
         console.error('Error fetching forums:', error);
         setError('Error fetching forums');
@@ -60,9 +52,7 @@ const LandingPage = ({ navigation }) => {
     fetchForums();
   }, [refresh]); // Refresh whenever `refresh` changes
 
-  // Trigger refresh manually
-  const triggerRefresh = () => setRefresh(!refresh);
-
+  // To trigger a refresh, you can call setRefresh(!refresh) whenever you want to re-fetch the data
 
   const handleLikePost = async (postId) => {
     const storedToken = await AsyncStorage.getItem('jwt');
@@ -90,7 +80,6 @@ const LandingPage = ({ navigation }) => {
       Alert.alert('Error', 'Could not like the post.');
     }
   };
-
   const handleAddComment = async (postId, commentContent) => {
     try {
       const response = await fetch(`${baseURL}posts/${postId}/comments`, {
@@ -103,24 +92,31 @@ const LandingPage = ({ navigation }) => {
       });
 
       if (response.ok) {
+        const newComment = await response.json();
         setComment('');
-        setRefresh(!refresh); // Trigger re-fetch for updated forums data
+
+        setForums((prevForums) =>
+          prevForums.map((post) =>
+            post._id === postId ? { ...post, comments: [...post.comments, newComment] } : post
+          )
+        );
+
       } else {
         console.error('Failed to add comment:', response.statusText);
       }
     } catch (error) {
       console.error('Error adding comment:', error);
     }
-};
 
+  };
   const handleAddReply = async () => {
     if (!reply) {
       Alert.alert('Error', 'Reply cannot be empty');
       return;
     }
-  
+
     const storedToken = await AsyncStorage.getItem('jwt');
-  
+
     try {
       const response = await fetch(`${baseURL}posts/${selectedPostId}/comments/${selectedCommentId}/replies`, {
         method: 'POST',
@@ -130,14 +126,29 @@ const LandingPage = ({ navigation }) => {
         },
         body: JSON.stringify({ content: reply }),
       });
-  
+
       if (response.ok) {
         const newReply = await response.json();
         setReply('');
         setShowReplyModal(false);
-  
-        setRefresh(!refresh); // Trigger re-fetch for updated forums data
-  
+
+        setForums(prevForums =>
+          prevForums.map(forum =>
+            forum._id === selectedPostId
+              ? {
+                ...forum,
+                comments: forum.comments.map(comment =>
+                  comment._id === selectedCommentId
+                    ? {
+                      ...comment,
+                      replies: [...comment.replies, newReply] // Ensure this is the correct structure
+                    }
+                    : comment
+                )
+              }
+              : forum
+          )
+        );
       } else {
         const errorMessage = await response.text();
         throw new Error(`Failed to add reply: ${response.status} - ${errorMessage}`);
@@ -147,7 +158,6 @@ const LandingPage = ({ navigation }) => {
       Alert.alert('Error', error.message || 'Could not add reply.');
     }
   };
-  
 
   const openReplyModal = (postId, commentId) => {
     setSelectedPostId(postId);
@@ -265,7 +275,6 @@ const LandingPage = ({ navigation }) => {
                             ))}
 
 
-
                             <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
                               <Text style={styles.replyButton}>Show More Replies</Text>
                             </TouchableOpacity>
@@ -325,14 +334,13 @@ const LandingPage = ({ navigation }) => {
   if (error) {
     return <Text>{error}</Text>;
   }
+
   return (
     <View style={styles.container}>
       <FlatList
         data={forums}
         renderItem={renderForumItem}
         keyExtractor={(item) => item._id}
-        onRefresh={triggerRefresh}
-        refreshing={loading}
       />
       <Modal visible={showReplyModal} animationType="slide">
         <View style={styles.modalContainer}>
@@ -363,7 +371,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   forumTitle: {
-    fontSize: 20,
+    fontSize: 30,
     fontWeight: 'bold',
   },
   userContainer: {
@@ -378,14 +386,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   forumUser: {
-    fontSize: 16,
+    fontSize: 17,
   },
   forumDate: {
     fontSize: 12,
     color: '#888',
   },
   forumContent: {
-    fontSize: 16,
+    fontSize: 17,
     marginVertical: 10,
   },
   forumImage: {
@@ -395,7 +403,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   likesContainer: {
-    marginBottom: 10,
+    marginBottom: 5,
   },
   likesText: {
     color: '#007bff',
@@ -404,7 +412,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   commentsHeader: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   comment: {
@@ -424,7 +432,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   commentDate: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888',
   },
   commentContent: {
