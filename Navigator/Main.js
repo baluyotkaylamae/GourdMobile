@@ -8,9 +8,11 @@ import UserNavigator from "./UserNavigator";
 import RegisterScreen from "../screens/User/Register";
 import AuthGlobal from "../Context/Store/AuthGlobal";
 import LoginScreen from "../screens/User/Login";
-import CreatePost from '../screens/Post/createPost'; // Ensure proper casing
+import CreatePost from '../screens/Post/createPost';
 import AdminNavigator from "./AdminNavigator";
+import InfoNavigator from "./InfoNavigator";
 import UpdateCommentScreen from '../screens/Post/UpdateComment'
+import InfoMenu from "../screens/Info/InfoMenu";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -76,6 +78,14 @@ const MainTabs = () => {
         options={{
           title: 'Create Post',
           tabBarIcon: ({ color }) => <Icon name="plus" color={color} size={30} />, // Add icon for CreatePost
+        }}
+      />
+      <Tab.Screen
+        name="InfoZone"
+        component={InfoNavigator}
+        options={{
+          title: 'Info Zone',    
+          tabBarIcon: ({ color }) => <Icon name="book" color={color} size={30} />, // Add icon for CreatePost
         }}
       />
       <Tab.Screen
