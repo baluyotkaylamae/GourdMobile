@@ -11,9 +11,9 @@ import { Camera } from 'expo-camera';
 import mime from 'mime';
 
 const UpdateProfile = ({ route, navigation }) => {
-    const { userProfile } = route.params;
+    const { userDetails } = route.params;
     const context = useContext(AuthGlobal);
-    const [updatedProfile, setUpdatedProfile] = useState(userProfile);
+    const [updatedProfile, setUpdatedProfile] = useState(userDetails);
     const [loading, setLoading] = useState(false);
     const [hasCameraPermission, setHasCameraPermission] = useState(null);
 

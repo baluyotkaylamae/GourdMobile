@@ -117,6 +117,19 @@ const Register = () => {
                         text1: "Registration Succeeded",
                         text2: "Please Login into your account",
                     });
+    
+                    // Clear all input fields
+                    setEmail("");
+                    setName("");
+                    setPhone("");
+                    setStreet("");
+                    setApartment("");
+                    setZip("");
+                    setCity("");
+                    setCountry("");
+                    setPassword("");
+                    setImage(null);
+    
                     setTimeout(() => {
                         navigation.navigate("Login");
                     }, 500);
@@ -133,7 +146,6 @@ const Register = () => {
                 console.error(error.message);
             });
     };
-    
 
     return (
         <KeyboardAwareScrollView

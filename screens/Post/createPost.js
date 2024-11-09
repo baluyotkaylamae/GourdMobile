@@ -13,11 +13,11 @@ import * as ImagePicker from "expo-image-picker";
 import mime from "mime";
 import DropDownPicker from 'react-native-dropdown-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import jwt_decode from "jwt-decode";
+
 
 const CreatePost = () => {
-  const [title, setTitle] = useState(null);
-  const [content, setContent] = useState(null);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
   const [error, setError] = useState("");
   const [images, setImages] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -100,13 +100,6 @@ const CreatePost = () => {
       const token = await AsyncStorage.getItem('jwt');
       if (!token) throw new Error("No token found in AsyncStorage");
 
-      // const decoded = jwt_decode(token);
-      // if (decoded && decoded.userId) {
-      //   formData.append("user", decoded.userId);
-      // } else {
-      //   throw new Error("Failed to retrieve user ID from token.");
-      // }
-
       const config = {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -126,7 +119,7 @@ const CreatePost = () => {
         // Clear the input fields
         setTitle(''); 
         setContent('');
-        setSelectedCategory(''); 
+        setSelectedCategory(null); 
         setImages([]); // Clear images
         setTimeout(() => {
           navigation.navigate("Home");
@@ -158,6 +151,7 @@ const CreatePost = () => {
               name={"title"}
               id={"title"}
               onChangeText={setTitle}
+              value={title}
             />
             <InputUser
               placeholder={"Content"}
@@ -166,6 +160,7 @@ const CreatePost = () => {
               multiline
               numberOfLines={4}
               onChangeText={setContent}
+              value={content}
             />
             <DropDownPicker
               open={open}

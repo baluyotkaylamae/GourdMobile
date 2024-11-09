@@ -11,7 +11,7 @@ import { Platform } from 'react-native';
 let baseURL = '';
 
 if (Platform.OS === 'android') {
-    baseURL = 'http://192.168.100.30:4000/api/v1/';
+    baseURL = 'http://192.168.1.9:4000/api/v1/';
 } else {
     baseURL = 'http://192.168.1.9:4000/api/v1/';
 }

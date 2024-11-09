@@ -1,8 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Alert, TextInput, Modal, Button, } from 'react-native';
+import {
+  View, Text, FlatList, StyleSheet, ActivityIndicator, Image,
+  TouchableOpacity, Alert, TextInput, Modal, Button
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import baseURL from '../assets/common/baseurl';
 import AuthGlobal from '../Context/Store/AuthGlobal';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const LandingPage = ({ navigation }) => {
   const context = useContext(AuthGlobal);
@@ -17,166 +21,108 @@ const LandingPage = ({ navigation }) => {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
-
   const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     const fetchForums = async () => {
       const storedToken = await AsyncStorage.getItem('jwt');
       setToken(storedToken);
-
       try {
         const response = await fetch(`${baseURL}posts`, {
-          method: 'GET',
           headers: {
             'Authorization': `Bearer ${storedToken}`,
             'Content-Type': 'application/json',
           },
         });
-
-        if (!response.ok) {
-          const errorMessage = await response.text();
-          throw new Error(`Failed to fetch forums: ${response.status} - ${errorMessage}`);
-        }
-
         const data = await response.json();
-        setForums(data);
+        setForums(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (error) {
-        console.error('Error fetching forums:', error);
         setError('Error fetching forums');
       } finally {
         setLoading(false);
       }
     };
-
     fetchForums();
-  }, [refresh]); // Refresh whenever `refresh` changes
+  }, [refresh]);
 
-  // To trigger a refresh, you can call setRefresh(!refresh) whenever you want to re-fetch the data
+  const triggerRefresh = () => setRefresh(!refresh);
 
   const handleLikePost = async (postId) => {
-    const storedToken = await AsyncStorage.getItem('jwt');
     try {
       const response = await fetch(`${baseURL}posts/${postId}/like`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${storedToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorMessage = await response.text();
-        throw new Error(`Failed to like post: ${response.status} - ${errorMessage}`);
-      }
-
-      setForums(prevForums =>
-        prevForums.map(forum =>
-          forum._id === postId ? { ...forum, likes: forum.likes + 1 } : forum
-        )
-      );
-    } catch (error) {
-      console.error('Error liking post:', error);
-      Alert.alert('Error', 'Could not like the post.');
-    }
-  };
-  const handleAddComment = async (postId, commentContent) => {
-    try {
-      const response = await fetch(`${baseURL}posts/${postId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ content: commentContent }),
-      });
-
-      if (response.ok) {
-        const newComment = await response.json();
-        setComment('');
-
-        setForums((prevForums) =>
-          prevForums.map((post) =>
-            post._id === postId ? { ...post, comments: [...post.comments, newComment] } : post
-          )
-        );
-
-      } else {
-        console.error('Failed to add comment:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    }
-
-  };
-  const handleAddReply = async () => {
-    if (!reply) {
-      Alert.alert('Error', 'Reply cannot be empty');
-      return;
-    }
-
-    const storedToken = await AsyncStorage.getItem('jwt');
-
-    try {
-      const response = await fetch(`${baseURL}posts/${selectedPostId}/comments/${selectedCommentId}/replies`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${storedToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: reply }),
       });
 
       if (response.ok) {
-        const newReply = await response.json();
-        setReply('');
-        setShowReplyModal(false);
+        const data = await response.json();
 
         setForums(prevForums =>
           prevForums.map(forum =>
-            forum._id === selectedPostId
-              ? {
-                ...forum,
-                comments: forum.comments.map(comment =>
-                  comment._id === selectedCommentId
-                    ? {
-                      ...comment,
-                      replies: [...comment.replies, newReply] // Ensure this is the correct structure
-                    }
-                    : comment
-                )
-              }
+            forum._id === postId
+              ? { ...forum, likes: data.likes, likedBy: data.likedBy }
               : forum
           )
         );
       } else {
-        const errorMessage = await response.text();
-        throw new Error(`Failed to add reply: ${response.status} - ${errorMessage}`);
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Could not like the post.');
       }
     } catch (error) {
-      console.error('Error adding reply:', error);
-      Alert.alert('Error', error.message || 'Could not add reply.');
+      Alert.alert('Error', 'Could not like the post.');
     }
   };
 
-  const openReplyModal = (postId, commentId) => {
-    setSelectedPostId(postId);
-    setSelectedCommentId(commentId);
-    setShowReplyModal(true);
+
+  const handleAddComment = async (postId) => {
+    try {
+      const response = await fetch(`${baseURL}posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: comment }),
+      });
+      if (response.ok) {
+        setComment('');
+        triggerRefresh();
+      }
+    } catch {
+      Alert.alert('Error', 'Could not add comment.');
+    }
+  };
+
+  const handleAddReply = async () => {
+    if (!reply) return Alert.alert('Error', 'Reply cannot be empty');
+    try {
+      const response = await fetch(`${baseURL}posts/${selectedPostId}/comments/${selectedCommentId}/replies`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: reply }),
+      });
+      if (response.ok) {
+        setReply('');
+        setShowReplyModal(false);
+        triggerRefresh();
+      }
+    } catch {
+      Alert.alert('Error', 'Could not add reply.');
+    }
   };
 
   const toggleReplies = (commentId) => {
-    setExpandedReplies(prev => ({
-      ...prev,
-      [commentId]: !prev[commentId],
-    }));
+    setExpandedReplies(prev => ({ ...prev, [commentId]: !prev[commentId] }));
   };
 
   const toggleComments = (postId) => {
-    setExpandedComments((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
+    setExpandedComments(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
 
   const renderForumItem = ({ item }) => (
@@ -185,136 +131,69 @@ const LandingPage = ({ navigation }) => {
         {item.user?.image ? (
           <Image source={{ uri: item.user.image }} style={styles.userImage} />
         ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text>No profile image</Text>
-          </View>
+          <Text>No profile image</Text>
         )}
         <Text style={styles.forumUser}>{item.user?.name || 'Unknown'}</Text>
       </View>
       <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
       <Text style={styles.forumTitle}>{item.title}</Text>
       <Text style={styles.forumContent}>{item.content}</Text>
-
-      {item.images.length > 0 ? (
-        <Image source={{ uri: item.images[0] }} style={styles.forumImage} resizeMode="cover" />
-      ) : (
-        <Text style={styles.imagePlaceholder}>No image available</Text>
+      {item.images.length > 0 && (
+        <Image source={{ uri: item.images[0] }} style={styles.forumImage} />
       )}
-
-      <View style={styles.likesContainer}>
-        <TouchableOpacity onPress={() => handleLikePost(item._id)}>
-          <Text style={styles.likesText}>{item.likes} {item.likes === 1 ? 'Like' : 'Likes'}</Text>
+      <View style={styles.likesCommentsContainer}>
+        <TouchableOpacity style={styles.likeButton} onPress={() => handleLikePost(item._id)}>
+          <Icon name="thumbs-up" size={16} color="#007AFF" style={styles.likeIcon} />
+          <Text style={styles.likesText}>{item.likes} Likes</Text>
         </TouchableOpacity>
+        <View style={styles.divider} />
+        <Text style={styles.commentCountText}>{item.comments.length} Comments</Text>
       </View>
-
-      {/* Render comments and replies */}
       <View style={styles.commentsContainer}>
         <Text style={styles.commentsHeader}>Comments:</Text>
-        {item.comments.length > 0 && item.comments.map((comment, index) => {
+        {item.comments.map((comment, index) => {
           if (!expandedComments[item._id] && index >= 1) return null;
-
           return (
             <View key={comment._id} style={styles.comment}>
-              {comment.user?.image ? (
+              {comment.user?.image && (
                 <Image source={{ uri: comment.user.image }} style={styles.commentUserImage} />
-              ) : (
-                <Text style={styles.imagePlaceholder}>No profile image</Text>
               )}
               <View style={styles.commentTextContainer}>
                 <Text style={styles.commentUser}>{comment.user?.name || 'Anonymous'}</Text>
                 <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleString()}</Text>
                 <Text style={styles.commentContent}>{comment.content}</Text>
-
-                <TouchableOpacity onPress={() => openReplyModal(item._id, comment._id)}>
+                <TouchableOpacity onPress={() => setSelectedPostId(item._id) || setSelectedCommentId(comment._id) || setShowReplyModal(true)}>
                   <Text style={styles.replyLink}>Reply</Text>
                 </TouchableOpacity>
-
-                {/* Show replies */}
                 {comment.replies && comment.replies.length > 0 && (
                   <View style={styles.repliesContainer}>
-                    {comment.replies.length > 2 ? (
-                      <>
-                        {expandedReplies[comment._id] ? (
-                          <>
-                            {comment.replies.map(reply => (
-                              <View key={reply._id} style={styles.reply}>
-                                {reply.user?.image ? (
-                                  <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
-                                ) : (
-                                  <Text style={styles.imagePlaceholder}>No profile image</Text>
-                                )}
-                                <View style={styles.replyTextContainer}>
-                                  <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
-                                  <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
-                                  <Text style={styles.replyContent}>{reply.content}</Text>
-                                </View>
-                              </View>
-                            ))}
-
-                            <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
-                              <Text style={styles.replyButton}>Hide Replies</Text>
-                            </TouchableOpacity>
-                          </>
-                        ) : (
-                          <>
-                            {comment.replies.slice(0, 1).map(reply => (
-                              <View key={reply._id} style={styles.reply}>
-                                {/* User image */}
-                                {reply.user?.image ? (
-                                  <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
-                                ) : (
-                                  <Text style={styles.imagePlaceholder}>No profile image</Text>
-                                )}
-                                {/* User name */}
-                                <View style={styles.replyTextContainer}>
-                                  <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
-                                  <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
-                                  <Text style={styles.replyContent}>{reply.content}</Text>
-                                </View>
-                              </View>
-                            ))}
-
-
-                            <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
-                              <Text style={styles.replyButton}>Show More Replies</Text>
-                            </TouchableOpacity>
-                          </>
+                    {comment.replies.slice(0, expandedReplies[comment._id] ? comment.replies.length : 1).map(reply => (
+                      <View key={reply._id} style={styles.reply}>
+                        {reply.user?.image && (
+                          <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
                         )}
-                      </>
-                    ) : (
-                      comment.replies.map(reply => (
-                        <View key={reply._id} style={styles.reply}>
-                          {reply.user?.image ? (
-                            <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
-                          ) : (
-                            <Text style={styles.imagePlaceholder}>No profile image</Text>
-                          )}
-                          <View style={styles.replyTextContainer}>
-                            <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
-                            <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
-                            <Text style={styles.replyContent}>{reply.content}</Text>
-                          </View>
+                        <View style={styles.replyTextContainer}>
+                          <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
+                          <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
+                          <Text style={styles.replyContent}>{reply.content}</Text>
                         </View>
-                      ))
-                    )}
+                      </View>
+                    ))}
+                    <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
+                      <Text style={styles.replyButton}>{expandedReplies[comment._id] ? 'Hide Replies' : 'Show More Replies'}</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
-
               </View>
             </View>
           );
         })}
       </View>
-
-      {/* Toggle See More Comments button */}
       {item.comments.length > 2 && (
         <TouchableOpacity onPress={() => toggleComments(item._id)}>
-          <Text style={styles.replyButton}>
-            {expandedComments[item._id] ? 'See Less Comments' : 'See More Comments'}
-          </Text>
+          <Text style={styles.replyButton}>{expandedComments[item._id] ? 'See Less Comments' : 'See More Comments'}</Text>
         </TouchableOpacity>
       )}
-
       <View style={styles.commentInputContainer}>
         <TextInput
           style={styles.commentInput}
@@ -322,43 +201,69 @@ const LandingPage = ({ navigation }) => {
           value={comment}
           onChangeText={setComment}
         />
-        <Button title="Comment" onPress={() => handleAddComment(item._id, comment)} />
+        <Button title="Comment" onPress={() => handleAddComment(item._id)} />
       </View>
     </View>
   );
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
-
-  if (error) {
-    return <Text>{error}</Text>;
-  }
-
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={forums}
-        renderItem={renderForumItem}
-        keyExtractor={(item) => item._id}
-      />
-      <Modal visible={showReplyModal} animationType="slide">
-        <View style={styles.modalContainer}>
-          <TextInput
-            style={styles.replyInput}
-            placeholder="Write a reply..."
-            value={reply}
-            onChangeText={setReply}
+    loading ? <ActivityIndicator size="large" color="#0000ff" /> :
+      error ? <Text>{error}</Text> :
+        <View style={styles.container}>
+          <FlatList
+            data={forums}
+            renderItem={renderForumItem}
+            keyExtractor={(item) => item._id}
+            onRefresh={triggerRefresh}
+            refreshing={loading}
           />
-          <Button title="Send Reply" onPress={handleAddReply} />
-          <Button title="Close" onPress={() => setShowReplyModal(false)} />
+          <Modal visible={showReplyModal} animationType="slide">
+            <View style={styles.modalContainer}>
+              <TextInput
+                style={styles.replyInput}
+                placeholder="Write a reply..."
+                value={reply}
+                onChangeText={setReply}
+              />
+              <Button title="Send Reply" onPress={handleAddReply} />
+              <Button title="Close" onPress={() => setShowReplyModal(false)} />
+            </View>
+          </Modal>
         </View>
-      </Modal>
-    </View>
   );
 };
-
 const styles = StyleSheet.create({
+  likesCommentsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff', 
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  likeIcon: {
+    marginRight: 5,
+  },
+  likesText: {
+    fontSize: 14,
+    color: '#fff', 
+  },
+  divider: {
+    width: 1,
+    height: 15,
+    backgroundColor: '#ccc',
+    marginHorizontal: 60,
+  },
+  commentCountText: {
+    fontSize: 14,
+    color: '#666',
+  },
   container: {
     flex: 1,
     padding: 10,
