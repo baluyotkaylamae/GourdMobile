@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import baseURL from '../assets/common/baseurl';
 import AuthGlobal from '../Context/Store/AuthGlobal';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { Menu, Provider } from 'react-native-paper';
+
 
 const LandingPage = ({ navigation }) => {
   const context = useContext(AuthGlobal);
@@ -125,6 +127,19 @@ const LandingPage = ({ navigation }) => {
     setExpandedComments(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
 
+  const 
+  handleEditComment = (postId, commentId, currentContent) => {
+    console.log('Before navigation:', { commentId, currentContent, postId });
+    navigation.navigate('UpdateComment', {
+      postId: postId,
+      commentId: commentId,  // Correcting to use commentId
+      currentContent: currentContent
+    });
+  };
+
+
+
+
   const renderForumItem = ({ item }) => (
     <View style={styles.forumCard}>
       <View style={styles.userContainer}>
@@ -162,6 +177,17 @@ const LandingPage = ({ navigation }) => {
                 <Text style={styles.commentUser}>{comment.user?.name || 'Anonymous'}</Text>
                 <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleString()}</Text>
                 <Text style={styles.commentContent}>{comment.content}</Text>
+
+                <Menu
+                visible={comment.showMenu}
+                onDismiss={() => handleMenuDismiss(comment._id)}
+                anchor={<TouchableOpacity onPress={() => handleMenuPress(comment._id)}><Icon name="ellipsis-v" size={20} color="#888" /></TouchableOpacity>}
+              >
+                <Menu.Item onPress={() => handleEditComment(item._id, comment._id, comment.content)} title="Edit Comment" />
+                <Menu.Item onPress={() => handleDeleteComment(item._id, comment._id)} title="Delete Comment" />
+              </Menu>
+
+
                 <TouchableOpacity onPress={() => setSelectedPostId(item._id) || setSelectedCommentId(comment._id) || setShowReplyModal(true)}>
                   <Text style={styles.replyLink}>Reply</Text>
                 </TouchableOpacity>
@@ -206,9 +232,72 @@ const LandingPage = ({ navigation }) => {
     </View>
   );
 
-  return (
-    loading ? <ActivityIndicator size="large" color="#0000ff" /> :
-      error ? <Text>{error}</Text> :
+  
+  const handleMenuPress = (commentId) => {
+    const updatedComments = forums.map(forum => {
+      return {
+        ...forum,
+        comments: forum.comments.map(comment => {
+          if (comment._id === commentId) {
+            return { ...comment, showMenu: !comment.showMenu };
+          }
+          return comment;
+        }),
+      };
+    });
+    setForums(updatedComments);
+  };
+  
+  const handleMenuDismiss = (commentId) => {
+    const updatedComments = forums.map(forum => {
+      return {
+        ...forum,
+        comments: forum.comments.map(comment => {
+          if (comment._id === commentId) {
+            return { ...comment, showMenu: false };
+          }
+          return comment;
+        }),
+      };
+    });
+    setForums(updatedComments);
+  };
+  
+  const handleDeleteComment = (postId, commentId) => {
+    Alert.alert('Delete Comment', `Are you sure you want to delete this comment?`, [
+      { text: 'Cancel' },
+      { text: 'Yes', onPress: () => deleteComment(postId, commentId) },
+    ]);
+  };
+  
+  const deleteComment = async (postId, commentId) => {
+    try {
+      const response = await fetch(`${baseURL}posts/${postId}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (response.ok) {
+        triggerRefresh(); // Successfully deleted, refresh the comments
+      } else {
+        const errorData = await response.json(); // Get additional error details from backend
+        console.error('Delete failed:', errorData); // Log error data for troubleshooting
+        Alert.alert('Error', errorData.message || 'Could not delete the comment.');
+      }
+    } catch (error) {
+      console.error('Delete request error:', error);
+      Alert.alert('Error', 'Could not delete the comment. Please try again.');
+    }
+  };
+  
+  
+return (
+  loading ? <ActivityIndicator size="large" color="#0000ff" /> :
+    error ? <Text>{error}</Text> :
+      <Provider> 
         <View style={styles.container}>
           <FlatList
             data={forums}
@@ -230,7 +319,9 @@ const LandingPage = ({ navigation }) => {
             </View>
           </Modal>
         </View>
-  );
+      </Provider>  
+);
+
 };
 const styles = StyleSheet.create({
   likesCommentsContainer: {
@@ -242,7 +333,7 @@ const styles = StyleSheet.create({
   likeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff', 
+    backgroundColor: '#fff',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
@@ -252,7 +343,7 @@ const styles = StyleSheet.create({
   },
   likesText: {
     fontSize: 14,
-    color: '#fff', 
+    color: '#fff',
   },
   divider: {
     width: 1,

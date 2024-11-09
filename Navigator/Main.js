@@ -5,12 +5,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome";
 import HomeScreen from "../screens/HomeScreen";
 import UserNavigator from "./UserNavigator";
-import UserProfileScreen from "../screens/User/UserProfile";
 import RegisterScreen from "../screens/User/Register";
 import AuthGlobal from "../Context/Store/AuthGlobal";
 import LoginScreen from "../screens/User/Login";
 import CreatePost from '../screens/Post/createPost'; // Ensure proper casing
 import AdminNavigator from "./AdminNavigator";
+import UpdateCommentScreen from '../screens/Post/UpdateComment'
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,6 +28,8 @@ const Main = () => {
             component={MainTabs}
             options={{ headerShown: false }}
           />
+          <Stack.Screen name="UpdateComment" 
+          component={UpdateCommentScreen} />
         </>
       ) : (
         <>
