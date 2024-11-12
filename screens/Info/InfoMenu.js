@@ -23,11 +23,8 @@ const InfoMenu = ({ navigation }) => {
                         <TouchableOpacity onPress={() => navigation.navigate("Definition")}>
                             <Text style={styles.subtopic}>Definition</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => navigation.navigate("Characteristics")}>
+                        <TouchableOpacity onPress={() => navigation.navigate("ChaUses")}>
                             <Text style={styles.subtopic}>Characteristics and Uses of Gourds</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => navigation.navigate("Types")}>
-                            <Text style={styles.subtopic}>Types of Gourds</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -38,10 +35,10 @@ const InfoMenu = ({ navigation }) => {
                 <Text style={styles.cardTitle}>🌿 History and Cultural Significance of Gourds</Text>
                 {expandedTopics["History"] && (
                     <View style={styles.subtopics}>
-                        <TouchableOpacity onPress={() => navigation.navigate("WorldHistory")}>
+                        <TouchableOpacity onPress={() => navigation.navigate("GourdWorld")}>
                             <Text style={styles.subtopic}>Gourds Around the World</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => navigation.navigate("PhilippinesHistory")}>
+                        <TouchableOpacity onPress={() => navigation.navigate("GourdPhi")}>
                             <Text style={styles.subtopic}>Gourds in the Philippines</Text>
                         </TouchableOpacity>
                     </View>
