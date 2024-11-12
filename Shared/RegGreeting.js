@@ -5,7 +5,7 @@ const RegGreeting = () => {
     return (
         <View style={styles.greetingContainer}>
             <Text>
-                <Text style={[styles.createText, { marginLeft: 10 }]}>Create an account so you can explore our</Text>
+                <Text style={[styles.createText, { marginLeft: 10 }]}>Create an account to explore our</Text>
                 {'\n'}
                 <Text style={styles.gourdtext}>GOURDTIFY APP</Text>
             </Text>

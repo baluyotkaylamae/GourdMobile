@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 
 const Greeting = () => {
   return (
+    
     <View style={styles.greetingContainer}>
       <Text>
         <Text style={styles.welcomeText}>Welcome</Text>

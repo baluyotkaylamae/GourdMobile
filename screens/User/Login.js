@@ -97,10 +97,10 @@ const Login = (props) => {
           onPress={() => navigation.navigate("Register")}
           style={[styles.registerButton, { color: "black", fontWeight: "bold" }]}
         >
-          Create new account
+          Create New Account
         </Text>
       </View>
-      <Text style={[styles.middleText, { color: "#664229", fontWeight: "bold" }]}>Or continue with</Text>
+      <Text style={[styles.middleText, { color: "#664229", fontWeight: "bold" }]}>Continue with</Text>
       <View style={styles.container}>
         <TouchableOpacity onPress={handleGoogleSignIn} style={styles.googleButtonContainer}>
           <Image source={googleLogo} style={styles.googleIcon} />
