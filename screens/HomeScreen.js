@@ -8,7 +8,7 @@ import baseURL from '../assets/common/baseurl';
 import AuthGlobal from '../Context/Store/AuthGlobal';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Menu, Provider } from 'react-native-paper';
-
+import Swiper from "react-native-swiper";
 
 const LandingPage = ({ navigation }) => {
   const context = useContext(AuthGlobal);
@@ -24,7 +24,7 @@ const LandingPage = ({ navigation }) => {
   const [expandedReplies, setExpandedReplies] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
   const [refresh, setRefresh] = useState(false);
-
+  const [images, setImages] = useState([]);
   useEffect(() => {
     const fetchForums = async () => {
       const storedToken = await AsyncStorage.getItem('jwt');
@@ -38,6 +38,11 @@ const LandingPage = ({ navigation }) => {
         });
         const data = await response.json();
         setForums(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+
+        // Collect all images from the posts
+        const allImages = data.flatMap(post => post.images || []);
+        setImages(allImages); // Set images for the carousel
+
       } catch (error) {
         setError('Error fetching forums');
       } finally {
@@ -127,17 +132,15 @@ const LandingPage = ({ navigation }) => {
     setExpandedComments(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const 
-  handleEditComment = (postId, commentId, currentContent) => {
-    console.log('Before navigation:', { commentId, currentContent, postId });
-    navigation.navigate('UpdateComment', {
-      postId: postId,
-      commentId: commentId,  // Correcting to use commentId
-      currentContent: currentContent
-    });
-  };
-
-
+  const
+    handleEditComment = (postId, commentId, currentContent) => {
+      console.log('Before navigation:', { commentId, currentContent, postId });
+      navigation.navigate('UpdateComment', {
+        postId: postId,
+        commentId: commentId,  // Correcting to use commentId
+        currentContent: currentContent
+      });
+    };
 
 
   const renderForumItem = ({ item }) => (
@@ -153,9 +156,30 @@ const LandingPage = ({ navigation }) => {
       <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
       <Text style={styles.forumTitle}>{item.title}</Text>
       <Text style={styles.forumContent}>{item.content}</Text>
-      {item.images.length > 0 && (
+      {/* {item.images.length > 0 && (
         <Image source={{ uri: item.images[0] }} style={styles.forumImage} />
+      )} */}
+      {item.images && item.images.length > 0 && (
+        <View style={styles.imageContainer}>
+          <Swiper
+            style={styles.swiper}
+            showsButtons={false}
+            autoplay
+            autoplayTimeout={10}
+          >
+            {item.images.map((image, index) => (
+              <Image
+                key={index}
+                source={{ uri: image }}
+                style={styles.carouselImage}
+                resizeMode="cover"
+              />
+            ))}
+          </Swiper>
+        </View>
       )}
+
+
       <View style={styles.likesCommentsContainer}>
         <TouchableOpacity style={styles.likeButton} onPress={() => handleLikePost(item._id)}>
           <Icon name="thumbs-up" size={16} color="#007AFF" style={styles.likeIcon} />
@@ -179,13 +203,13 @@ const LandingPage = ({ navigation }) => {
                 <Text style={styles.commentContent}>{comment.content}</Text>
 
                 <Menu
-                visible={comment.showMenu}
-                onDismiss={() => handleMenuDismiss(comment._id)}
-                anchor={<TouchableOpacity onPress={() => handleMenuPress(comment._id)}><Icon name="ellipsis-v" size={20} color="#888" /></TouchableOpacity>}
-              >
-                <Menu.Item onPress={() => handleEditComment(item._id, comment._id, comment.content)} title="Edit Comment" />
-                <Menu.Item onPress={() => handleDeleteComment(item._id, comment._id)} title="Delete Comment" />
-              </Menu>
+                  visible={comment.showMenu}
+                  onDismiss={() => handleMenuDismiss(comment._id)}
+                  anchor={<TouchableOpacity onPress={() => handleMenuPress(comment._id)}><Icon name="ellipsis-v" size={20} color="#888" /></TouchableOpacity>}
+                >
+                  <Menu.Item onPress={() => handleEditComment(item._id, comment._id, comment.content)} title="Edit Comment" />
+                  <Menu.Item onPress={() => handleDeleteComment(item._id, comment._id)} title="Delete Comment" />
+                </Menu>
 
 
                 <TouchableOpacity onPress={() => setSelectedPostId(item._id) || setSelectedCommentId(comment._id) || setShowReplyModal(true)}>
@@ -232,7 +256,7 @@ const LandingPage = ({ navigation }) => {
     </View>
   );
 
-  
+
   const handleMenuPress = (commentId) => {
     const updatedComments = forums.map(forum => {
       return {
@@ -247,7 +271,7 @@ const LandingPage = ({ navigation }) => {
     });
     setForums(updatedComments);
   };
-  
+
   const handleMenuDismiss = (commentId) => {
     const updatedComments = forums.map(forum => {
       return {
@@ -262,14 +286,14 @@ const LandingPage = ({ navigation }) => {
     });
     setForums(updatedComments);
   };
-  
+
   const handleDeleteComment = (postId, commentId) => {
     Alert.alert('Delete Comment', `Are you sure you want to delete this comment?`, [
       { text: 'Cancel' },
       { text: 'Yes', onPress: () => deleteComment(postId, commentId) },
     ]);
   };
-  
+
   const deleteComment = async (postId, commentId) => {
     try {
       const response = await fetch(`${baseURL}posts/${postId}/comments/${commentId}`, {
@@ -279,7 +303,7 @@ const LandingPage = ({ navigation }) => {
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (response.ok) {
         triggerRefresh(); // Successfully deleted, refresh the comments
       } else {
@@ -292,38 +316,44 @@ const LandingPage = ({ navigation }) => {
       Alert.alert('Error', 'Could not delete the comment. Please try again.');
     }
   };
-  
-  
-return (
-  loading ? <ActivityIndicator size="large" color="#0000ff" /> :
-    error ? <Text>{error}</Text> :
-      <Provider> 
-        <View style={styles.container}>
-          <FlatList
-            data={forums}
-            renderItem={renderForumItem}
-            keyExtractor={(item) => item._id}
-            onRefresh={triggerRefresh}
-            refreshing={loading}
-          />
-          <Modal visible={showReplyModal} animationType="slide">
-            <View style={styles.modalContainer}>
-              <TextInput
-                style={styles.replyInput}
-                placeholder="Write a reply..."
-                value={reply}
-                onChangeText={setReply}
-              />
-              <Button title="Send Reply" onPress={handleAddReply} />
-              <Button title="Close" onPress={() => setShowReplyModal(false)} />
-            </View>
-          </Modal>
-        </View>
-      </Provider>  
-);
+
+
+  return (
+    loading ? <ActivityIndicator size="large" color="#0000ff" /> :
+      error ? <Text>{error}</Text> :
+        <Provider>
+          <View style={styles.container}>
+            <FlatList
+              data={forums}
+              renderItem={renderForumItem}
+              keyExtractor={(item) => item._id}
+              onRefresh={triggerRefresh}
+              refreshing={loading}
+            />
+            <Modal visible={showReplyModal} animationType="slide">
+              <View style={styles.modalContainer}>
+                <TextInput
+                  style={styles.replyInput}
+                  placeholder="Write a reply..."
+                  value={reply}
+                  onChangeText={setReply}
+                />
+                <Button title="Send Reply" onPress={handleAddReply} />
+                <Button title="Close" onPress={() => setShowReplyModal(false)} />
+              </View>
+            </Modal>
+          </View>
+        </Provider>
+  );
 
 };
 const styles = StyleSheet.create({
+
+  carouselImage: {
+    width: "100%", // Ensure the image spans the entire width
+    height: "100%", // Fill the container height
+    resizeMode: "cover", // Keep the image aspect ratio intact while covering the space
+  },
   likesCommentsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -358,7 +388,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    backgroundColor:'#E0F8E6'
+    backgroundColor: '#E0F8E6'
   },
   forumCard: {
     borderWidth: 2,
