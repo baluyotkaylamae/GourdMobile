@@ -25,6 +25,8 @@ const LandingPage = ({ navigation }) => {
   const [expandedComments, setExpandedComments] = useState({});
   const [refresh, setRefresh] = useState(false);
   const [images, setImages] = useState([]);
+  const isAdmin = context?.user?.role === 'admin';  
+
   useEffect(() => {
     const fetchForums = async () => {
       const storedToken = await AsyncStorage.getItem('jwt');
@@ -226,6 +228,20 @@ const LandingPage = ({ navigation }) => {
                           <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
                           <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
                           <Text style={styles.replyContent}>{reply.content}</Text>
+                            {/* Ellipsis menu for reply */}
+                        <Menu
+                          visible={reply.showMenu}
+                          onDismiss={() => handleReplyMenuDismiss(reply._id)}
+                          anchor={
+                            <TouchableOpacity onPress={() => handleReplyMenuPress(reply._id)}>
+                              <Icon name="ellipsis-v" size={20} color="#888" />
+                            </TouchableOpacity>
+                          }
+                        >
+                          <Menu.Item onPress={() => handleEditReply(item._id, comment._id, reply._id, reply.content)} title="Edit Reply" />
+                          <Menu.Item onPress={() => handleDeleteReply(item._id, comment._id, reply._id)} title="Delete Reply" />
+                        </Menu>
+                        
                         </View>
                       </View>
                     ))}
@@ -256,6 +272,67 @@ const LandingPage = ({ navigation }) => {
     </View>
   );
 
+  const handleReplyMenuPress = (replyId) => {
+    const updatedForums = forums.map(forum => ({
+      ...forum,
+      comments: forum.comments.map(comment => ({
+        ...comment,
+        replies: comment.replies.map(reply => {
+          if (reply._id === replyId) {
+            return { ...reply, showMenu: !reply.showMenu };
+          }
+          return reply;
+        }),
+      })),
+    }));
+    setForums(updatedForums);
+  };
+  
+  const handleReplyMenuDismiss = (replyId) => {
+    const updatedForums = forums.map(forum => ({
+      ...forum,
+      comments: forum.comments.map(comment => ({
+        ...comment,
+        replies: comment.replies.map(reply => {
+          if (reply._id === replyId) {
+            return { ...reply, showMenu: false };
+          }
+          return reply;
+        }),
+      })),
+    }));
+    setForums(updatedForums);
+  };
+  
+  const handleEditReply = (postId, commentId, replyId, currentContent) => {
+    navigation.navigate('UpdateReply', {
+      postId,
+      commentId,
+      replyId,
+      currentContent
+    });
+  };
+  
+  // Handle delete reply
+  const handleDeleteReply = async (postId, commentId, replyId) => {
+    try {
+      const response = await fetch(`${baseURL}posts/${postId}/comments/${commentId}/replies/${replyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        triggerRefresh(); // Refresh after successful deletion
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Could not delete the reply.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not delete the reply.');
+    }
+  };
 
   const handleMenuPress = (commentId) => {
     const updatedComments = forums.map(forum => {
@@ -349,7 +426,7 @@ const LandingPage = ({ navigation }) => {
 };
 const styles = StyleSheet.create({
 
-  carouselImage: {
+   carouselImage: {
     width: "100%", // Ensure the image spans the entire width
     height: "100%", // Fill the container height
     resizeMode: "cover", // Keep the image aspect ratio intact while covering the space

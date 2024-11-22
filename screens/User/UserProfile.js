@@ -20,6 +20,8 @@ const UserProfile = ({ navigation }) => {
     const [expandedComments, setExpandedComments] = useState({});
     const [refresh, setRefresh] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
+    const [actionModalVisible, setActionModalVisible] = useState(false);
+    const [selectedPost, setSelectedPost] = useState(null);
 
     useEffect(() => {
 
@@ -153,7 +155,8 @@ const UserProfile = ({ navigation }) => {
     const toggleComments = (postId) => {
         setExpandedComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
     };
-
+    
+    
 
     const renderUserInfo = () => {
         console.log('Rendering User Info:', userInfo);
@@ -184,6 +187,32 @@ const UserProfile = ({ navigation }) => {
         );
     };
 
+    const handleEditPost = async (postId) => {
+        navigation.navigate('UpdatePost', { postId });
+    };
+
+    const handleDeletePost = async (postId) => {
+        try {
+            const storedToken = await AsyncStorage.getItem('jwt');
+            const response = await fetch(`${baseURL}posts/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${storedToken}`,
+                },
+            });
+
+            if (response.ok) {
+                Alert.alert('Success', 'Post deleted successfully.');
+                triggerRefresh();
+            } else {
+                const errorData = await response.json();
+                Alert.alert('Error', errorData.message || 'Could not delete the post.');
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Could not delete the post.');
+        }
+    };
+
 
     const renderForumItem = ({ item }) => (
         <View style={styles.forumCard}>
@@ -198,6 +227,18 @@ const UserProfile = ({ navigation }) => {
             <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
             <Text style={styles.forumTitle}>{item.title}</Text>
             <Text style={styles.forumContent}>{item.content}</Text>
+    
+            {/* Ellipsis Icon Positioned to the Upper Left Corner */}
+            <TouchableOpacity
+                onPress={() => {
+                    setSelectedPost(item); // Set the current post
+                    setActionModalVisible(true); // Show the modal
+                }}
+                style={styles.ellipsisIconContainer}
+            >
+                <Icon name="ellipsis-h" size={20} color="#007AFF" />
+            </TouchableOpacity>
+    
             {item.images.length > 0 && (
                 <Image source={{ uri: item.images[0] }} style={styles.forumImage} />
             )}
@@ -309,7 +350,50 @@ const UserProfile = ({ navigation }) => {
                         <Button title="Close" onPress={() => setShowReplyModal(false)} />
                     </View>
                 </Modal>
+                <Modal
+                    visible={actionModalVisible}
+                    animationType="slide"
+                    transparent
+                    onRequestClose={() => setActionModalVisible(false)}
+                >
+                    <View style={styles.modalBackground}>
+                        <View style={styles.actionModal}>
+                            <TouchableOpacity
+                                style={styles.actionOption}
+                                onPress={() => {
+                                    setActionModalVisible(false);
+                                    // Call edit function or open an edit screen
+                                    handleEditPost(selectedPost._id, selectedPost.content);
+                                }}
+                            >
+                                <Text style={styles.actionText}>Edit</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.actionOption}
+                                onPress={() => {
+                                    setActionModalVisible(false);
+                                    // Call delete function
+                                    handleDeletePost(selectedPost._id);
+                                }}
+                            >
+                                <Text style={styles.actionText}>Delete</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.actionOption}
+                                onPress={() => setActionModalVisible(false)}
+                            >
+                                <Text style={styles.actionText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+
             </View>
+
+
+
+
         )
     );
 };
@@ -317,7 +401,7 @@ const UserProfile = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#E0F8E6', padding: 10 },
-    noPostsText: {fontSize: 16, fontWeight: 'bold', textAlign: 'center', color: 'gray', marginTop: 20, },
+    noPostsText: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', color: 'gray', marginTop: 20, },
     userInfoContainer: { alignItems: 'center', marginBottom: 20 },
     profileImage: { width: 80, height: 80, borderRadius: 40, marginBottom: 10 },
     userName: { fontSize: 18, fontWeight: 'bold' },
@@ -367,6 +451,56 @@ const styles = StyleSheet.create({
     replyInput: { borderColor: '#007AFF', borderWidth: 1, borderRadius: 5, padding: 10, marginBottom: 10 },
     replyButton: { backgroundColor: '#007AFF', padding: 10, borderRadius: 5 },
     replyButtonText: { color: 'white', textAlign: 'center' },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalOption: {
+        width: '100%',
+        padding: 15,
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderColor: '#ccc',
+    },
+    modalText: {
+        fontSize: 18,
+        color: '#007AFF',
+    },
+
+    container: { flex: 1, backgroundColor: '#E0F8E6', padding: 10 },
+    ellipsisIconContainer: {
+        position: 'absolute',
+        top: 10,
+        right: 10, // Upper left corner of the post card
+    },
+    modalBackground: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dimmed background
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    actionModal: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        width: '80%', // Adjust modal width
+    },
+    actionOption: {
+        padding: 15,
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderColor: '#ccc',
+    },
+    
 });
 
 export default UserProfile;

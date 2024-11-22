@@ -12,7 +12,8 @@ import CreatePost from '../screens/Post/createPost';
 import AdminNavigator from "./AdminNavigator";
 import InfoNavigator from "./InfoNavigator";
 import UpdateCommentScreen from '../screens/Post/UpdateComment'
-import InfoMenu from "../screens/Info/InfoMenu";
+import UpdateReplyScreen from '../screens/Post/UpdateReplies'
+import UpdatePostScreen from "../screens/Post/editPost";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,6 +33,10 @@ const Main = () => {
           />
           <Stack.Screen name="UpdateComment" 
           component={UpdateCommentScreen} />
+          <Stack.Screen name="UpdateReply" 
+          component={UpdateReplyScreen} />
+           <Stack.Screen name="UpdatePost" 
+          component={UpdatePostScreen} />
         </>
       ) : (
         <>
