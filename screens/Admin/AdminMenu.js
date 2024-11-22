@@ -14,8 +14,8 @@ const AdminMenu = ({ navigation }) => {
                 <Text style={styles.buttonText}>Manage Users</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Charts")}>
-                <Text style={styles.buttonText}>View Charts</Text>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Dashboard")}>
+                <Text style={styles.buttonText}>Dashboard</Text>
             </TouchableOpacity>
         </View>
     );
@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         padding: 20,
-        backgroundColor: "#e8faf6",
+        backgroundColor: "#E0F8E6",
     },
     title: {
         fontSize: 36, // Increased font size for emphasis

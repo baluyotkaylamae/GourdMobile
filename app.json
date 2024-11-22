@@ -7,9 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/logoNBG.png",
+      "resizeMode": "center",
+      "backgroundColor": "#fff"
     },
     "permissions": [
       "CAMERA",
@@ -20,8 +20,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logoNBG.png",
+        "backgroundColor": "#fff"
       }
     },
     "web": {

@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#E0F8E6',
     },
     profileImage: {
         width: 120,

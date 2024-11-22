@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     marginTop: -13,
     // marginLeft: 20,
     marginBottom: 25,
-    backgroundColor: '#fff',
+    backgroundColor: '#E0F8E6',
   },
   welcomeText: {
     color: '#000000',

@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   googleButtonContainer: {
     width: "20%",
-    backgroundColor: "#f6f6f6", // Keeping the same color for Google sign-in button
+    backgroundColor: "#E0F8E6", // Keeping the same color for Google sign-in button
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 10,

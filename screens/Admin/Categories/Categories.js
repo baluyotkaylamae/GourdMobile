@@ -148,7 +148,7 @@ const CategoryList = () => {
     if (error) return <Text>{error}</Text>;
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ backgroundColor: '#E0F8E6', flex: 1 }}>
             <FlatList
                 data={categories}
                 renderItem={({ item }) => (
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 25,
         right: 20,
-        backgroundColor: '#3498db',
+        backgroundColor: '#50ADBF',
         width: 60,
         height: 60,
         borderRadius: 30,
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)", // Adds a dark overlay
+        backgroundColor: '#E0F8E6', // Adds a dark overlay
     },
     modalView: {
         width: '80%',

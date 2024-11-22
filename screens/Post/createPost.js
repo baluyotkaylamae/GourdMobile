@@ -143,7 +143,7 @@ const CreatePost = () => {
       data={[{}]}
       keyExtractor={(item, index) => index.toString()}
       renderItem={() => (
-        <View style={{ flex: 1 }}>
+        <View  style={styles.container}>
           <HeaderReg />
           <FormContainer>
             <InputUser
@@ -203,6 +203,11 @@ const CreatePost = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#E0F8E6",
+  },
+
   imageContainer: {
     flexDirection: "row",
     flexWrap: "wrap",

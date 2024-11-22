@@ -316,7 +316,7 @@ const UserProfile = ({ navigation }) => {
 
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: 'white', padding: 10 },
+    container: { flex: 1, backgroundColor: '#E0F8E6', padding: 10 },
     noPostsText: {fontSize: 16, fontWeight: 'bold', textAlign: 'center', color: 'gray', marginTop: 20, },
     userInfoContainer: { alignItems: 'center', marginBottom: 20 },
     profileImage: { width: 80, height: 80, borderRadius: 40, marginBottom: 10 },

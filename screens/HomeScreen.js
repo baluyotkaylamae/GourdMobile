@@ -358,16 +358,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+    backgroundColor:'#E0F8E6'
   },
   forumCard: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#ccc',
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
+    backgroundColor: "white"
   },
   forumTitle: {
-    fontSize: 30,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   userContainer: {

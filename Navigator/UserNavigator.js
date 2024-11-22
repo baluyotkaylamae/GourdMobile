@@ -16,6 +16,7 @@ const UserNavigator = (props) => {
                 name="Login"
                 component={Login}
                 options={{
+                    backgroundColor: "#C3E8C9",
                     headerShown: false,
                 }}
             />

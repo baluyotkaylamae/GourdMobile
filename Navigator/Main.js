@@ -56,19 +56,25 @@ const MainTabs = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
-      screenOptions={{
-        tabBarHideOnKeyboard: true,
-        tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: "#3baea0",
-        tabBarInactiveTintColor: "#a3a3a3",
-      }}
+    initialRouteName="Home"
+    screenOptions={{
+      tabBarHideOnKeyboard: true,
+      tabBarShowLabel: false,
+      tabBarStyle: styles.tabBar,
+      tabBarActiveTintColor: "#4DA674", // Active icon color
+      tabBarInactiveTintColor: "#6A6A6A", // Inactive icon color
+      headerStyle: {
+        backgroundColor: '#C3E8C9', // Header background color
+      },
+      headerTintColor: '#6A6A6A', // Header title and icons color
+    }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
+          title: 'Forum Page',
+          backgroundColor: '#C3E8C9',
           tabBarIcon: ({ color }) => <Icon name="home" color={color} size={30} />,
         }}
       />
@@ -92,6 +98,7 @@ const MainTabs = () => {
         name="User"
         component={UserNavigator}
         options={{
+          title: 'User Profile', 
           tabBarIcon: ({ color }) => <Icon name="user" color={color} size={30} />,
         }}
       />
@@ -101,6 +108,7 @@ const MainTabs = () => {
           name="Admin"
           component={AdminNavigator}
           options={{
+            title: 'Admin Panel', 
             tabBarIcon: ({ color }) => (
               <Icon
                 name="cog"
@@ -118,7 +126,7 @@ const MainTabs = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#C3E8C9",
     borderTopWidth: 0,
     elevation: 5,
     height: 70,
