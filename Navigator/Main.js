@@ -14,6 +14,7 @@ import InfoNavigator from "./InfoNavigator";
 import UpdateCommentScreen from '../screens/Post/UpdateComment'
 import UpdateReplyScreen from '../screens/Post/UpdateReplies'
 import UpdatePostScreen from "../screens/Post/editPost";
+import GourdIdentify from "../screens/GourdIdentify";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,12 +32,12 @@ const Main = () => {
             component={MainTabs}
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="UpdateComment" 
-          component={UpdateCommentScreen} />
-          <Stack.Screen name="UpdateReply" 
-          component={UpdateReplyScreen} />
-           <Stack.Screen name="UpdatePost" 
-          component={UpdatePostScreen} />
+          <Stack.Screen name="UpdateComment"
+            component={UpdateCommentScreen} />
+          <Stack.Screen name="UpdateReply"
+            component={UpdateReplyScreen} />
+          <Stack.Screen name="UpdatePost"
+            component={UpdatePostScreen} />
         </>
       ) : (
         <>
@@ -61,18 +62,18 @@ const MainTabs = () => {
 
   return (
     <Tab.Navigator
-    initialRouteName="Home"
-    screenOptions={{
-      tabBarHideOnKeyboard: true,
-      tabBarShowLabel: false,
-      tabBarStyle: styles.tabBar,
-      tabBarActiveTintColor: "#4DA674", // Active icon color
-      tabBarInactiveTintColor: "#6A6A6A", // Inactive icon color
-      headerStyle: {
-        backgroundColor: '#C3E8C9', // Header background color
-      },
-      headerTintColor: '#6A6A6A', // Header title and icons color
-    }}
+      initialRouteName="Home"
+      screenOptions={{
+        tabBarHideOnKeyboard: true,
+        tabBarShowLabel: false,
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: "#4DA674", // Active icon color
+        tabBarInactiveTintColor: "#6A6A6A", // Inactive icon color
+        headerStyle: {
+          backgroundColor: '#C3E8C9', // Header background color
+        },
+        headerTintColor: '#6A6A6A', // Header title and icons color
+      }}
     >
       <Tab.Screen
         name="Home"
@@ -95,15 +96,25 @@ const MainTabs = () => {
         name="InfoZone"
         component={InfoNavigator}
         options={{
-          title: 'Info Zone',    
+          title: 'Info Zone',
           tabBarIcon: ({ color }) => <Icon name="book" color={color} size={30} />, // Add icon for CreatePost
         }}
       />
+
+      <Tab.Screen
+        name="GourdIdentify"
+        component={GourdIdentify}
+        options={{
+          title: 'Gourdtify',
+          tabBarIcon: ({ color }) => <Icon name="camera" color={color} size={30} />,
+        }}
+      />
+
       <Tab.Screen
         name="User"
         component={UserNavigator}
         options={{
-          title: 'User Profile', 
+          title: 'User Profile',
           tabBarIcon: ({ color }) => <Icon name="user" color={color} size={30} />,
         }}
       />
@@ -113,7 +124,7 @@ const MainTabs = () => {
           name="Admin"
           component={AdminNavigator}
           options={{
-            title: 'Admin Panel', 
+            title: 'Admin Panel',
             tabBarIcon: ({ color }) => (
               <Icon
                 name="cog"
