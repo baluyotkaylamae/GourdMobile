@@ -15,7 +15,7 @@ import UpdateCommentScreen from '../screens/Post/UpdateComment'
 import UpdateReplyScreen from '../screens/Post/UpdateReplies'
 import UpdatePostScreen from "../screens/Post/editPost";
 import GourdIdentify from "../screens/GourdIdentify";
-
+import Gourdchat from "./chatNavigator";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -84,6 +84,16 @@ const MainTabs = () => {
           tabBarIcon: ({ color }) => <Icon name="home" color={color} size={30} />,
         }}
       />
+
+      <Tab.Screen
+        name="Gourdconnect"
+        component={Gourdchat}
+        options={{
+          title: 'Chat Room',
+          tabBarIcon: ({ color }) => <Icon name="comment" color={color} size={30} />,
+        }}
+      />
+
       <Tab.Screen
         name="CreatePost"
         component={CreatePost}
