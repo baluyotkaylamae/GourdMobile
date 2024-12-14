@@ -42,10 +42,30 @@ const UserDetails = ({ route }) => {
         fetchUserDetails();
     }, [userId, context.stateUser.isAuthenticated]);
 
+    // const handleLogout = async () => {
+    //     await AsyncStorage.removeItem("jwt");
+    //     logoutUser(context.dispatch);
+    // };
+
     const handleLogout = async () => {
-        await AsyncStorage.removeItem("jwt");
-        logoutUser(context.dispatch);
+        try {
+            const token = await AsyncStorage.getItem('jwt');
+            const userId = context.stateUser?.user?.userId; // Assuming you store userId in context
+    
+            // Send logout request to the backend
+            await axios.post(`${baseURL}users/logout`, { userId }, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+    
+            // Remove token from AsyncStorage
+            await AsyncStorage.removeItem('jwt');
+            logoutUser(context.dispatch); // Dispatch logout action
+            navigation.navigate('Login'); // Navigate to login screen
+        } catch (error) {
+            console.error('Logout error:', error.response ? error.response.data : error.message);
+        }
     };
+    
 
     if (loading) {
         return (

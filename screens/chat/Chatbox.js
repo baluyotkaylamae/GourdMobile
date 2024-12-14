@@ -15,7 +15,7 @@ import axios from 'axios';
 import AuthGlobal from '../../Context/Store/AuthGlobal';
 import baseURL from '../../assets/common/baseurl';
 
-const ChatScreen = ({ route }) => {
+const Chatbox = ({ route }) => {
   const { userId: receiverId } = route.params; // Receiver ID from navigation params
   const context = useContext(AuthGlobal); // Access the AuthGlobal context
   const [messages, setMessages] = useState([]); // Messages for the conversation
@@ -26,87 +26,74 @@ const ChatScreen = ({ route }) => {
 
   useEffect(() => {
     const fetchMessages = async () => {
-      const storedToken = await AsyncStorage.getItem('jwt');
-      const senderId = context.stateUser?.user?.userId; // Get sender's ID from AuthGlobal context
+      setLoading(true);
+      setError(null);
 
-      if (!senderId) {
-        console.error('User ID not found');
-        setError('User not authenticated');
-        setLoading(false);
-        return;
-      }
+      try {
+        const storedToken = await AsyncStorage.getItem('jwt');
+        const senderId = context.stateUser?.user?.userId;
 
-      if (storedToken) {
-        try {
-          console.log(`Fetching messages between senderId: ${senderId} and receiverId: ${receiverId}`);
-          const response = await axios.get(
-            `${baseURL}chat/messages/${senderId}/${receiverId}`,
-            { headers: { Authorization: `Bearer ${storedToken}` } }
-          );
-          console.log('Fetched messages:', response.data);
-          setMessages(response.data.messages || []);
-        } catch (err) {
-          console.error('Error fetching messages:', err.response?.data || err.message);
-          // setError('Error fetching messages');
-        } finally {
-          setLoading(false);
+        if (!senderId || !storedToken) {
+          throw new Error('Authentication failed');
         }
-      } else {
-        console.error('Token not found in AsyncStorage');
-        setError('User not authenticated');
+
+        console.log(`Fetching messages between senderId: ${senderId} and receiverId: ${receiverId}`);
+        const response = await axios.get(
+          `${baseURL}chat/messages/${senderId}/${receiverId}`,
+          { headers: { Authorization: `Bearer ${storedToken}` } }
+        );
+
+        console.log('Fetched messages:', response.data);
+        setMessages(response.data.messages || []);
+      } catch (err) {
+        // console.error('Error fetching messages:', err.response?.data || err.message);
+        // setError(err.message || 'Failed to load messages');
+      } finally {
         setLoading(false);
       }
     };
 
     fetchMessages();
-  }, [receiverId]); // Re-fetch when receiverId changes
+  }, [receiverId, context.stateUser]);
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return; // Prevent empty messages
 
-    const storedToken = await AsyncStorage.getItem('jwt');
-    const senderId = context.stateUser?.user?.userId;
-
-    if (!storedToken || !senderId) {
-      console.error('Token or sender ID is missing.');
-      setError('Authentication failed');
-      return;
-    }
-
-    const messageData = {
-      sender: senderId,
-      user: receiverId,
-      message: newMessage.trim(),
-      timestamp: new Date().toISOString(), // Add a timestamp if required
-    };
-
-    console.log('Message data to be sent:', messageData);
-
     try {
+      const storedToken = await AsyncStorage.getItem('jwt');
+      const senderId = context.stateUser?.user?.userId;
+
+      if (!storedToken || !senderId) {
+        throw new Error('Authentication failed');
+      }
+
+      const messageData = {
+        sender: senderId,
+        user: receiverId,
+        message: newMessage.trim(),
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log('Message data to be sent:', messageData);
+
       const response = await axios.post(
         `${baseURL}chat/messages`,
         messageData,
         { headers: { Authorization: `Bearer ${storedToken}` } }
       );
+
       console.log('Message sent successfully:', response.data);
-      if (response.data && response.data.message) {
-        setMessages((prevMessages) => [...prevMessages, response.data.message]);
-        setNewMessage(''); // Clear the input field
-      } else {
-        console.error('Unexpected response data:', response.data);
-        setError('Unexpected server response');
-      }
+      setMessages((prevMessages) => [...prevMessages, response.data.message]);
+      setNewMessage('');
     } catch (err) {
       console.error('Error sending message:', err.response?.data || err.message);
-      setError('Error sending message');
+      setError(err.message || 'Failed to send message');
     }
   };
 
   const renderMessage = ({ item }) => {
-    const senderId = item.sender?._id || item.sender?.id; // Safely access sender's ID
+    const senderId = item.sender?._id || item.sender?.id;
     const currentUserId = context.stateUser?.user?.userId;
-
-    // Check if the message is sent by the current user
     const isMyMessage = senderId === currentUserId;
 
     return (
@@ -132,9 +119,8 @@ const ChatScreen = ({ route }) => {
           <FlatList
             data={messages}
             renderItem={renderMessage}
-            keyExtractor={(item) => (item._id ? item._id.toString() : Math.random().toString())} // Handle undefined _id
+            keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
             style={styles.messageList}
-            inverted={false}
           />
           <View style={styles.inputContainer}>
             <TextInput
@@ -169,12 +155,12 @@ const styles = StyleSheet.create({
     maxWidth: '70%',
   },
   myMessage: {
-    alignSelf: 'flex-end', // Align sender's message to the right
-    backgroundColor: '#dcf8c6', // Green background for the receiver
+    alignSelf: 'flex-end',
+    backgroundColor: '#dcf8c6',
   },
   otherMessage: {
-    alignSelf: 'flex-start', // Align receiver's message to the left
-    backgroundColor: '#f0f0f0', // Light gray background for the sender
+    alignSelf: 'flex-start',
+    backgroundColor: '#f0f0f0',
   },
   messageText: {
     fontSize: 16,
@@ -211,4 +197,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatScreen;
+export default Chatbox;
