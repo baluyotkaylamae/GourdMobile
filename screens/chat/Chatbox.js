@@ -1,19 +1,11 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  ActivityIndicator,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import AuthGlobal from '../../Context/Store/AuthGlobal';
 import baseURL from '../../assets/common/baseurl';
+import { useFocusEffect } from '@react-navigation/native';
+import io from 'socket.io-client';
 
 const Chatbox = ({ route }) => {
   const { userId: receiverId } = route.params; // Receiver ID from navigation params
@@ -23,73 +15,102 @@ const Chatbox = ({ route }) => {
   const [error, setError] = useState(null); // Error state
   const [newMessage, setNewMessage] = useState(''); // Input for the new message
   const flatListRef = useRef(); // Reference for FlatList
+  const socket = useRef(null); // Socket reference
 
   useEffect(() => {
     const fetchMessages = async () => {
       setLoading(true);
       setError(null);
-
+  
       try {
         const storedToken = await AsyncStorage.getItem('jwt');
         const senderId = context.stateUser?.user?.userId;
-
+  
         if (!senderId || !storedToken) {
           throw new Error('Authentication failed');
         }
-
+  
         console.log(`Fetching messages between senderId: ${senderId} and receiverId: ${receiverId}`);
         const response = await axios.get(
           `${baseURL}chat/messages/${senderId}/${receiverId}`,
           { headers: { Authorization: `Bearer ${storedToken}` } }
         );
-
+  
         console.log('Fetched messages:', response.data);
         setMessages(response.data.messages || []);
       } catch (err) {
-        // console.error('Error fetching messages:', err.response?.data || err.message);
-        // setError(err.message || 'Failed to load messages');
+        if (err.response?.status === 404) {
+          console.warn('No messages found, setting empty message list');
+          setMessages([]); // No messages yet
+        } else {
+          console.error('Error fetching messages:', err.response?.data || err.message);
+          setError(err.message || 'Failed to load messages');
+        }
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchMessages();
-  }, [receiverId, context.stateUser]);
+  }, [receiverId, context.stateUser]);  
+
+  useFocusEffect(
+    useCallback(() => {
+      const storedToken = AsyncStorage.getItem('jwt');
+      socket.current = io(baseURL, {
+        query: { token: storedToken },
+      });
+
+      socket.current.on('connect', () => {
+        console.log('Connected to socket server');
+      });
+
+      socket.current.on('message', (message) => {
+        console.log('New message received:', message);
+        setMessages((prevMessages) => [...prevMessages, message]);
+      });
+
+      return () => {
+        socket.current.disconnect();
+        console.log('Disconnected from socket server');
+      };
+    }, [receiverId])
+  );
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return; // Prevent empty messages
-
+    if (!newMessage.trim()) return;
+  
+    const tempMessage = {
+      _id: new Date().toISOString(),
+      sender: { _id: context.stateUser?.user?.userId },
+      message: newMessage.trim(),
+    };
+    setMessages((prevMessages) => [...prevMessages, tempMessage]);
+    setNewMessage('');
+  
     try {
       const storedToken = await AsyncStorage.getItem('jwt');
       const senderId = context.stateUser?.user?.userId;
-
-      if (!storedToken || !senderId) {
-        throw new Error('Authentication failed');
-      }
-
+  
+      if (!storedToken || !senderId) throw new Error('Authentication failed');
+  
       const messageData = {
         sender: senderId,
         user: receiverId,
         message: newMessage.trim(),
-        timestamp: new Date().toISOString(),
       };
-
-      console.log('Message data to be sent:', messageData);
-
+  
       const response = await axios.post(
         `${baseURL}chat/messages`,
         messageData,
         { headers: { Authorization: `Bearer ${storedToken}` } }
       );
-
-      console.log('Message sent successfully:', response.data);
-      setMessages((prevMessages) => [...prevMessages, response.data.message]);
-      setNewMessage('');
+  
+      socket.current.emit('message', response.data.message);
     } catch (err) {
-      console.error('Error sending message:', err.response?.data || err.message);
-      setError(err.message || 'Failed to send message');
+      console.error('Error sending message:', err.message);
     }
-  };
+  };  
 
   const renderMessage = ({ item }) => {
     const senderId = item.sender?._id || item.sender?.id;
@@ -109,19 +130,29 @@ const Chatbox = ({ route }) => {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : error ? (
         <Text style={styles.errorText}>{error}</Text>
       ) : (
         <>
-          <FlatList
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
-            style={styles.messageList}
-          />
+          {messages.length === 0 ? (
+            <Text style={styles.noMessagesText}>No messages yet</Text>
+          ) : (
+            <FlatList
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
+              style={styles.messageList}
+              ref={flatListRef}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            />
+          )}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
@@ -195,6 +226,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     margin: 20,
   },
+  noMessagesText: {
+    textAlign: 'center',
+    color: '#888',
+    fontSize: 16,
+    margin: 20,
+  },
+  
 });
 
 export default Chatbox;

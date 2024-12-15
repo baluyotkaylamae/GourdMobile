@@ -142,14 +142,12 @@ const ChatScreen = ({ navigation }) => {
             renderItem={renderUserItem}
             keyExtractor={(item) => item._id ? item._id : item.name}
             horizontal
-            style={styles.userList}
             showsHorizontalScrollIndicator={false}
           />
           <FlatList
             data={chats}
             renderItem={renderChatItem}
             keyExtractor={(item) => `${item.chatId}-${item.otherUser._id}`}
-            style={styles.chatList}
           />
         </>
       )}
@@ -160,7 +158,6 @@ const ChatScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 10, backgroundColor: '#f5f5f5' },
   header: { fontSize: 26, fontWeight: 'bold', marginBottom: 15, color: '#333' },
-  userList: { marginBottom: 0 },
   userCard: {
     alignItems: 'center',
     marginRight: 15,
@@ -185,7 +182,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: 'green',
   },
-  chatList: { flex: 1, marginTop: 15 },
   chatCard: {
     flexDirection: 'row',
     backgroundColor: '#fff',
