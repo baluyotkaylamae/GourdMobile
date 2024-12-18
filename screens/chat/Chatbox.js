@@ -21,23 +21,27 @@ const Chatbox = ({ route }) => {
     const fetchMessages = async () => {
       setLoading(true);
       setError(null);
-  
+
       try {
         const storedToken = await AsyncStorage.getItem('jwt');
         const senderId = context.stateUser?.user?.userId;
-  
+
         if (!senderId || !storedToken) {
           throw new Error('Authentication failed');
         }
-  
+
         console.log(`Fetching messages between senderId: ${senderId} and receiverId: ${receiverId}`);
         const response = await axios.get(
           `${baseURL}chat/messages/${senderId}/${receiverId}`,
           { headers: { Authorization: `Bearer ${storedToken}` } }
         );
-  
+
         console.log('Fetched messages:', response.data);
         setMessages(response.data.messages || []);
+
+        // Once the messages are fetched, mark them as read
+        await markMessagesAsRead(response.data.messages || []);
+
       } catch (err) {
         if (err.response?.status === 404) {
           console.warn('No messages found, setting empty message list');
@@ -50,9 +54,32 @@ const Chatbox = ({ route }) => {
         setLoading(false);
       }
     };
-  
+
     fetchMessages();
-  }, [receiverId, context.stateUser]);  
+  }, [receiverId, context.stateUser]);
+
+  const markMessagesAsRead = async (messages) => {
+    const storedToken = await AsyncStorage.getItem('jwt');
+    const senderId = context.stateUser?.user?.userId;
+
+    if (!storedToken || !senderId) return;
+
+    try {
+      const response = await axios.put(
+        `${baseURL}chat/messages/read`,
+        { messages: messages.map(msg => msg._id) }, // Send an array of message IDs
+        { headers: { Authorization: `Bearer ${storedToken}` } }
+      );
+
+      console.log('Marked messages as read:', response.data);
+      // Optionally, update the local state to reflect changes
+      setMessages(prevMessages =>
+        prevMessages.map(msg => ({ ...msg, isRead: true })) // Update all messages to isRead: true
+      );
+    } catch (err) {
+      console.error('Error marking messages as read:', err.message);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -79,7 +106,7 @@ const Chatbox = ({ route }) => {
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
-  
+
     const tempMessage = {
       _id: new Date().toISOString(),
       sender: { _id: context.stateUser?.user?.userId },
@@ -87,30 +114,30 @@ const Chatbox = ({ route }) => {
     };
     setMessages((prevMessages) => [...prevMessages, tempMessage]);
     setNewMessage('');
-  
+
     try {
       const storedToken = await AsyncStorage.getItem('jwt');
       const senderId = context.stateUser?.user?.userId;
-  
+
       if (!storedToken || !senderId) throw new Error('Authentication failed');
-  
+
       const messageData = {
         sender: senderId,
         user: receiverId,
         message: newMessage.trim(),
       };
-  
+
       const response = await axios.post(
         `${baseURL}chat/messages`,
         messageData,
         { headers: { Authorization: `Bearer ${storedToken}` } }
       );
-  
+
       socket.current.emit('message', response.data.message);
     } catch (err) {
       console.error('Error sending message:', err.message);
     }
-  };  
+  };
 
   const renderMessage = ({ item }) => {
     const senderId = item.sender?._id || item.sender?.id;
@@ -232,7 +259,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     margin: 20,
   },
-  
 });
 
 export default Chatbox;

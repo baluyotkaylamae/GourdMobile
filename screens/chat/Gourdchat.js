@@ -19,50 +19,44 @@ const ChatScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [token, setToken] = useState('');
+  const [triggerRefresh, setTriggerRefresh] = useState(false);  // Add triggerRefresh state
 
   const currentUserId = context.stateUser?.user?.userId;
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const storedToken = await AsyncStorage.getItem('jwt');
-        if (!storedToken) {
-          setError('No token found');
-          return;
-        }
+        if (!storedToken) throw new Error('No token found');
         setToken(storedToken);
 
         const usersResponse = await fetch(`${baseURL}users`, {
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { Authorization: `Bearer ${storedToken}` },
         });
+        if (!usersResponse.ok) throw new Error('Failed to fetch users');
         const usersData = await usersResponse.json();
         setUsers(usersData);
 
         const chatsResponse = await fetch(`${baseURL}chat/chats`, {
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { Authorization: `Bearer ${storedToken}` },
         });
+        if (!chatsResponse.ok) throw new Error('Failed to fetch chats');
         const chatsData = await chatsResponse.json();
-        const consolidatedChats = consolidateChats(chatsData.chats || []);
-        setChats(consolidatedChats);
+        setChats(consolidateChats(chatsData.chats || []));
       } catch (err) {
-        setError('Error fetching data: ' + err.message);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [currentUserId]);
+  }, [currentUserId, triggerRefresh]);  // Depend on triggerRefresh to refresh data
 
   const consolidateChats = (chatsList) => {
     const chatPairMap = new Map();
-
     chatsList.forEach((chat) => {
       if (!chat.sender || !chat.user) return;
       if (chat.sender._id !== currentUserId && chat.user._id !== currentUserId) return;
@@ -71,38 +65,25 @@ const ChatScreen = ({ navigation }) => {
       const chatPairKey = otherUser._id;
 
       if (!chatPairMap.has(chatPairKey)) {
-        chatPairMap.set(chatPairKey, {
-          otherUser,
-          lastMessage: chat.lastMessage,
-          lastMessageTimestamp: chat.lastMessageTimestamp,
-          chatId: chat._id,
-        });
+        chatPairMap.set(chatPairKey, { ...chat, otherUser });
       } else {
         const existingChat = chatPairMap.get(chatPairKey);
         if (new Date(chat.lastMessageTimestamp) > new Date(existingChat.lastMessageTimestamp)) {
-          chatPairMap.set(chatPairKey, {
-            otherUser,
-            lastMessage: chat.lastMessage,
-            lastMessageTimestamp: chat.lastMessageTimestamp,
-            chatId: chat._id,
-          });
+          chatPairMap.set(chatPairKey, { ...chat, otherUser });
         }
       }
     });
 
-    return Array.from(chatPairMap.values());
+    return Array.from(chatPairMap.values()).sort(
+      (a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)
+    );
   };
 
-  const handleUserClick = (userId) => {
-    navigation.navigate('UserChatScreen', { userId });
-  };
-
-  const handleChatClick = (chatId, userId) => {
-    navigation.navigate('UserChatScreen', { chatId, userId });
-  };
+  const handleUserClick = (userId, userName) => navigation.navigate('UserChatScreen', { userId, name: userName });
+  const handleChatClick = (chatId, userId, userName) => navigation.navigate('UserChatScreen', { chatId, userId, name: userName });
 
   const renderUserItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleUserClick(item._id)} style={styles.userCard}>
+    <TouchableOpacity onPress={() => handleUserClick(item._id, item.name)} style={styles.userCard}>
       <Image
         source={{ uri: item.image || 'https://via.placeholder.com/50' }}
         style={styles.userAvatar}
@@ -113,7 +94,13 @@ const ChatScreen = ({ navigation }) => {
   );
 
   const renderChatItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleChatClick(item.chatId, item.otherUser._id)} style={styles.chatCard}>
+    <TouchableOpacity
+      onPress={() => handleChatClick(item._id, item.otherUser._id, item.otherUser.name)}
+      style={[
+        styles.chatCard,
+        item.lastMessageIsRead === false && styles.unreadChatCard,  // Apply highlight if message is unread
+      ]}
+    >
       <Image
         source={{ uri: item.otherUser.image || 'https://via.placeholder.com/50' }}
         style={styles.chatAvatar}
@@ -128,6 +115,11 @@ const ChatScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Trigger refresh whenever the data is required to be refreshed
+  const handleRefresh = () => {
+    setTriggerRefresh((prev) => !prev);  // Toggle refresh state
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Chats</Text>
@@ -140,14 +132,19 @@ const ChatScreen = ({ navigation }) => {
           <FlatList
             data={users}
             renderItem={renderUserItem}
-            keyExtractor={(item) => item._id ? item._id : item.name}
+            keyExtractor={(item) => item._id || item.name}
             horizontal
             showsHorizontalScrollIndicator={false}
+            refreshing={loading}  // Make use of refreshing prop
+            onRefresh={handleRefresh}  // Handle refresh on pull-to-refresh
           />
+
           <FlatList
             data={chats}
             renderItem={renderChatItem}
             keyExtractor={(item) => `${item.chatId}-${item.otherUser._id}`}
+            refreshing={loading}  // Make use of refreshing prop
+            onRefresh={handleRefresh}  // Handle refresh on pull-to-refresh
           />
         </>
       )}
@@ -156,27 +153,21 @@ const ChatScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10, backgroundColor: '#f5f5f5' },
+  container: {  backgroundColor: '#f5f5f5' },
   header: { fontSize: 26, fontWeight: 'bold', marginBottom: 15, color: '#333' },
   userCard: {
     alignItems: 'center',
     marginRight: 15,
-    backgroundColor: '#fff',
     padding: 12,
     borderRadius: 50,
-    elevation: 8,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 2, height: 2 },
   },
   userAvatar: { width: 50, height: 50, borderRadius: 25 },
-  userName: { fontSize: 14, fontWeight: '600', color: '#333', textAlign: 'center' },
+  userName: { fontSize: 12, fontWeight: '500', color: '#333', textAlign: 'center' },
   onlineIndicator: {
     position: 'absolute',
     bottom: 2,
-    right: 2,
+    right: 1,
     width: 10,
     height: 10,
     borderRadius: 5,
@@ -188,12 +179,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: 12,
     padding: 12,
-    elevation: 5,
+    elevation: 3,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+  },
+  unreadChatCard: {
+    backgroundColor: '#e0f7fa',  // Light blue background for unread messages
   },
   chatAvatar: { width: 60, height: 60, borderRadius: 30, marginRight: 20 },
   chatContent: { flex: 1, justifyContent: 'center' },

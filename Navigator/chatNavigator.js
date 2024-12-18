@@ -6,8 +6,14 @@ const Stack = createStackNavigator();
 
 const ChatNavigator = () => (
   <Stack.Navigator>
-    <Stack.Screen name="ChatScreen" component={Gourdchat} />
-    <Stack.Screen name="UserChatScreen" component={UserChatScreen} />
+    <Stack.Screen name="ChatScreen"
+      options={{ headerShown: false }}
+      component={Gourdchat} />
+    <Stack.Screen name="UserChatScreen"
+      options={({ route }) => ({
+        title: route.params?.name || 'Chat', // Use the passed user's name or default to 'Chat'
+      })}
+      component={UserChatScreen} />
   </Stack.Navigator>
 );
 export default ChatNavigator;
