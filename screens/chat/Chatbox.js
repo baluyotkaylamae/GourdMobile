@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import AuthGlobal from '../../Context/Store/AuthGlobal';
 import baseURL from '../../assets/common/baseurl';
 import { useFocusEffect } from '@react-navigation/native';
 import io from 'socket.io-client';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const Chatbox = ({ route }) => {
   const { userId: receiverId } = route.params; // Receiver ID from navigation params
@@ -14,8 +15,28 @@ const Chatbox = ({ route }) => {
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
   const [newMessage, setNewMessage] = useState(''); // Input for the new message
+  const [visibleTimestamp, setVisibleTimestamp] = useState(null); // ID of the clicked message
   const flatListRef = useRef(); // Reference for FlatList
   const socket = useRef(null); // Socket reference
+
+  const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+
+    if (date.toDateString() === now.toDateString()) {
+      // If it's today, show only the time
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    if (date >= oneWeekAgo) {
+      // If within the last week, show the weekday and time
+      return date.toLocaleString('en-US', { weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    // Otherwise, show the date
+    return date.toLocaleDateString();
+  };
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -147,14 +168,30 @@ const Chatbox = ({ route }) => {
     return (
       <View
         style={[
-          styles.messageContainer,
-          isMyMessage ? styles.myMessage : styles.otherMessage,
+          styles.messageWrapper,
+          isMyMessage ? styles.myMessageWrapper : styles.otherMessageWrapper,
         ]}
       >
-        <Text style={styles.messageText}>{item.message}</Text>
+        {!isMyMessage && (
+          <Image
+            source={{ uri: item.sender?.image || 'https://via.placeholder.com/50' }}
+            onError={(e) => console.log('Image failed to load:', e.nativeEvent.error)}
+            style={styles.userAvatar}
+          />
+        )}
+        <View
+          style={[
+            styles.messageContainer,
+            isMyMessage ? styles.myMessage : styles.otherMessage,
+          ]}
+        >
+          <Text style={styles.messageText}>{item.message}</Text>
+          <Text style={styles.timestamp}>{formatTimestamp(item.createdAt)}</Text>
+        </View>
       </View>
     );
   };
+
 
   return (
     <KeyboardAvoidingView
@@ -188,7 +225,7 @@ const Chatbox = ({ route }) => {
               placeholder="Type your message..."
             />
             <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-              <Text style={styles.sendButtonText}>Send</Text>
+              <Icon name="arrow-right" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </>
@@ -239,7 +276,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   sendButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#90EE90',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
@@ -258,6 +295,28 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 16,
     margin: 20,
+  },
+  messageWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  myMessageWrapper: {
+    justifyContent: 'flex-end',
+  },
+  otherMessageWrapper: {
+    justifyContent: 'flex-start',
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  timestampText: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 5,
   },
 });
 
