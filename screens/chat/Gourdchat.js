@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
+  TextInput,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import baseURL from '../../assets/common/baseurl';
@@ -15,11 +16,14 @@ import AuthGlobal from '../../Context/Store/AuthGlobal';
 const ChatScreen = ({ navigation }) => {
   const context = useContext(AuthGlobal);
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]); // State for filtered users
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [token, setToken] = useState('');
   const [triggerRefresh, setTriggerRefresh] = useState(false);  // Add triggerRefresh state
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [searchText, setSearchText] = useState('');  // State for search text
 
   const currentUserId = context.stateUser?.user?.userId;
 
@@ -38,6 +42,7 @@ const ChatScreen = ({ navigation }) => {
         if (!usersResponse.ok) throw new Error('Failed to fetch users');
         const usersData = await usersResponse.json();
         setUsers(usersData);
+        setFilteredUsers(usersData); // Set the users initially
 
         const chatsResponse = await fetch(`${baseURL}chat/chats`, {
           headers: { Authorization: `Bearer ${storedToken}` },
@@ -122,33 +127,62 @@ const ChatScreen = ({ navigation }) => {
     setTriggerRefresh((prev) => !prev);  // Toggle refresh state
   };
 
+  // Handle search text change and filter users
+  const handleSearchChange = (text) => {
+    setSearchText(text);
+  
+    if (text === '') {
+      setFilteredUsers(users); // Show all users if search text is empty
+    } else {
+      const filtered = users.filter((user) => {
+        // Check if the characters in searchText appear anywhere in the user name
+        const userName = user.name.toLowerCase();
+        const searchQuery = text.toLowerCase();
+        return searchQuery.split('').every(char => userName.includes(char));
+      });
+      setFilteredUsers(filtered); // Show filtered users based on name
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}> Chats</Text>
+      <Text style={styles.header}>Chats</Text>
+
+      {/* Search Box */}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search for users..."
+        value={searchText}
+        onChangeText={handleSearchChange} // Trigger filtering
+      />
+
       {loading ? (
         <ActivityIndicator size="large" color="#0078d4" />
       ) : error ? (
         <Text style={styles.errorText}>{error}</Text>
       ) : (
         <>
+          {/* User List with Search Functionality */}
           <FlatList
-            data={users}
+            data={filteredUsers} // Use filtered users for display
             renderItem={renderUserItem}
             keyExtractor={(item) => item._id || item.name}
             horizontal
             showsHorizontalScrollIndicator={false}
-            refreshing={loading}  // Make use of refreshing prop
-            onRefresh={handleRefresh}  // Handle refresh on pull-to-refresh
+            refreshing={loading}
+            onRefresh={handleRefresh}
           />
 
+          {/* Spacer */}
           <View style={{ marginVertical: 10 }} />
 
+          {/* Chats List */}
           <FlatList
-            data={chats}
+            data={chats} // Use chats data here
             renderItem={renderChatItem}
             keyExtractor={(item) => `${item.chatId}-${item.otherUser._id}`}
-            refreshing={loading}  // Make use of refreshing prop
-            onRefresh={handleRefresh}  // Handle refresh on pull-to-refresh
+            refreshing={loading}
+            onRefresh={handleRefresh}
           />
         </>
       )}
@@ -159,6 +193,15 @@ const ChatScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { backgroundColor: '#f5f5f5' },
   header: { fontSize: 26, fontWeight: 'bold', marginBottom: 15, color: '#333' },
+  searchInput: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 10,
+    marginBottom: 20,  // Space between search and user list
+    marginHorizontal: 15, // Add horizontal margin (left and right)
+  },
   userCard: {
     alignItems: 'center',
     marginRight: 15,
@@ -201,6 +244,5 @@ const styles = StyleSheet.create({
   chatTimestamp: { fontSize: 12, color: '#888', marginTop: 5 },
   errorText: { color: 'red', textAlign: 'center', marginTop: 20 },
 });
-
 
 export default ChatScreen;
