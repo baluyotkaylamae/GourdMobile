@@ -84,12 +84,14 @@ const ChatScreen = ({ navigation }) => {
 
   const renderUserItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleUserClick(item._id, item.name)} style={styles.userCard}>
-      <Image
-        source={{ uri: item.image || 'https://via.placeholder.com/50' }}
-        style={styles.userAvatar}
-      />
+      <View style={styles.avatarContainer}>
+        <Image
+          source={{ uri: item.image || 'https://via.placeholder.com/50' }}
+          style={styles.userAvatar}
+        />
+        {item.isOnline && <View style={styles.onlineIndicator}></View>}
+      </View>
       <Text style={styles.userName}>{item.name}</Text>
-      {item.isOnline && <View style={styles.onlineIndicator}></View>}
     </TouchableOpacity>
   );
 
@@ -122,7 +124,7 @@ const ChatScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Chats</Text>
+      <Text style={styles.header}> Chats</Text>
       {loading ? (
         <ActivityIndicator size="large" color="#0078d4" />
       ) : error ? (
@@ -139,6 +141,8 @@ const ChatScreen = ({ navigation }) => {
             onRefresh={handleRefresh}  // Handle refresh on pull-to-refresh
           />
 
+          <View style={{ marginVertical: 10 }} />
+
           <FlatList
             data={chats}
             renderItem={renderChatItem}
@@ -153,7 +157,7 @@ const ChatScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {  backgroundColor: '#f5f5f5' },
+  container: { backgroundColor: '#f5f5f5' },
   header: { fontSize: 26, fontWeight: 'bold', marginBottom: 15, color: '#333' },
   userCard: {
     alignItems: 'center',
@@ -162,16 +166,21 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     justifyContent: 'center',
   },
+  avatarContainer: {
+    position: 'relative', // Allows positioning of the online indicator relative to the avatar
+  },
   userAvatar: { width: 50, height: 50, borderRadius: 25 },
   userName: { fontSize: 12, fontWeight: '500', color: '#333', textAlign: 'center' },
   onlineIndicator: {
     position: 'absolute',
     bottom: 2,
-    right: 1,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    right: 2, // Adjust to move it slightly to the right of the avatar
+    width: 12,
+    height: 12,
+    borderRadius: 6, // Half of the width/height to make it a circle
     backgroundColor: 'green',
+    borderWidth: 2, // Add border width
+    borderColor: '#f5f5f5', // Set the border color to #f5f5f5
   },
   chatCard: {
     flexDirection: 'row',
@@ -192,5 +201,6 @@ const styles = StyleSheet.create({
   chatTimestamp: { fontSize: 12, color: '#888', marginTop: 5 },
   errorText: { color: 'red', textAlign: 'center', marginTop: 20 },
 });
+
 
 export default ChatScreen;
