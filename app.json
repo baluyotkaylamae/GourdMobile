@@ -27,5 +27,8 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "gourdmobile"  
+    "scheme": "gourdmobile",  
+    "assetBundlePatterns": [
+      "screens/**/*"
+    ]
   }}

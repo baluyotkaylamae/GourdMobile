@@ -145,12 +145,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#FF5733',
         padding: 12,
         borderRadius: 5,
-        alignIt: 'center',
+        alignItems: 'center',
     },
     logoutText: {
         color: '#fff',
         fontSize: 16,
-        alignIt: 'center',
+     
     },
     loadingContainer: {
         flex: 1,
