@@ -7,6 +7,7 @@ import baseURL from '../../assets/common/baseurl';
 import { useFocusEffect } from '@react-navigation/native';
 import io from 'socket.io-client';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { filterBadWords } from '../filteredwords';
 
 const Chatbox = ({ route }) => {
   const { userId: receiverId } = route.params; // Receiver ID from navigation params
@@ -58,7 +59,11 @@ const Chatbox = ({ route }) => {
         );
 
         console.log('Fetched messages:', response.data);
-        setMessages(response.data.messages || []);
+        // setMessages(response.data.messages || []);
+        setMessages(response.data.messages.map(message => ({
+          ...message,
+          message: filterBadWords(message.message) // Filter incoming message
+        })) || []);
 
         // Once the messages are fetched, mark them as read
         await markMessagesAsRead(response.data.messages || []);
@@ -113,9 +118,15 @@ const Chatbox = ({ route }) => {
         console.log('Connected to socket server');
       });
 
+      // socket.current.on('message', (message) => {
+      //   console.log('New message received:', message);
+      //   setMessages((prevMessages) => [...prevMessages, message]);
+      // });
       socket.current.on('message', (message) => {
-        console.log('New message received:', message);
-        setMessages((prevMessages) => [...prevMessages, message]);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { ...message, message: filterBadWords(message.message) } // Filter incoming message
+        ]);
       });
 
       return () => {
@@ -127,39 +138,48 @@ const Chatbox = ({ route }) => {
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
-
+  
+    const filteredMessage = filterBadWords(newMessage.trim());
+    
+    // Check if the message contains filtered words
+    if (filteredMessage !== newMessage.trim()) {
+      // Show a warning or prevent the message from being sent
+      console.warn("Message contains inappropriate content and will not be sent.");
+      return;
+    }
+  
     const tempMessage = {
       _id: new Date().toISOString(),
       sender: { _id: context.stateUser?.user?.userId },
-      message: newMessage.trim(),
+      message: filteredMessage,
     };
     setMessages((prevMessages) => [...prevMessages, tempMessage]);
     setNewMessage('');
-
+  
     try {
       const storedToken = await AsyncStorage.getItem('jwt');
       const senderId = context.stateUser?.user?.userId;
-
+  
       if (!storedToken || !senderId) throw new Error('Authentication failed');
-
+  
       const messageData = {
         sender: senderId,
         user: receiverId,
         message: newMessage.trim(),
       };
-
+  
       const response = await axios.post(
         `${baseURL}chat/messages`,
         messageData,
         { headers: { Authorization: `Bearer ${storedToken}` } }
       );
-
+  
       socket.current.emit('message', response.data.message);
     } catch (err) {
       console.error('Error sending message:', err.message);
     }
   };
-
+  
   const renderMessage = ({ item }) => {
     const senderId = item.sender?._id || item.sender?.id;
     const currentUserId = context.stateUser?.user?.userId;

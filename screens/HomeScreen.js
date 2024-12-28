@@ -9,6 +9,8 @@ import AuthGlobal from '../Context/Store/AuthGlobal';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Menu, Provider } from 'react-native-paper';
 import Swiper from "react-native-swiper";
+import { filterBadWords } from './filteredwords'; // Adjust the path as necessary
+
 
 const LandingPage = ({ navigation }) => {
   const context = useContext(AuthGlobal);
@@ -98,6 +100,13 @@ const LandingPage = ({ navigation }) => {
 
 
   const handleAddComment = async (postId) => {
+    const filteredComment = filterBadWords(comment); // Filter the comment
+  
+    if (filteredComment !== comment) { // If the comment was modified
+      setComment(filteredComment); // Update the comment to the filtered version
+      return; // Stop submission as the comment has been filtered
+    }
+  
     try {
       const response = await fetch(`${baseURL}posts/${postId}/comments`, {
         method: 'POST',
@@ -107,6 +116,7 @@ const LandingPage = ({ navigation }) => {
         },
         body: JSON.stringify({ content: comment }),
       });
+  
       if (response.ok) {
         setComment('');
         triggerRefresh();
@@ -115,9 +125,17 @@ const LandingPage = ({ navigation }) => {
       Alert.alert('Error', 'Could not add comment.');
     }
   };
-
+  
   const handleAddReply = async () => {
     if (!reply) return Alert.alert('Error', 'Reply cannot be empty');
+  
+    const filteredReply = filterBadWords(reply); // Filter the reply
+  
+    if (filteredReply !== reply) { // If the reply was modified
+      setReply(filteredReply); // Update the reply to the filtered version
+      return; // Stop submission as the reply has been filtered
+    }
+  
     try {
       const response = await fetch(`${baseURL}posts/${selectedPostId}/comments/${selectedCommentId}/replies`, {
         method: 'POST',
@@ -127,6 +145,7 @@ const LandingPage = ({ navigation }) => {
         },
         body: JSON.stringify({ content: reply }),
       });
+  
       if (response.ok) {
         setReply('');
         setShowReplyModal(false);
@@ -137,6 +156,7 @@ const LandingPage = ({ navigation }) => {
     }
   };
 
+  
   const toggleReplies = (commentId) => {
     setExpandedReplies(prev => ({ ...prev, [commentId]: !prev[commentId] }));
   };

@@ -12,7 +12,7 @@ const Stack = createStackNavigator();
 const UserNavigator = (props) => {
     return (
         <Stack.Navigator>
-            <Stack.Screen
+            {/* <Stack.Screen
                 name="Login"
                 component={Login}
                 options={{
@@ -26,7 +26,7 @@ const UserNavigator = (props) => {
                 options={{
                     headerShown: false,
                 }}
-            />
+            /> */}
 
             <Stack.Screen
                 name="User Profile"
