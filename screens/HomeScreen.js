@@ -25,7 +25,7 @@ const LandingPage = ({ navigation }) => {
   const [expandedComments, setExpandedComments] = useState({});
   const [refresh, setRefresh] = useState(false);
   const [images, setImages] = useState([]);
-  const isAdmin = context?.user?.role === 'admin';  
+  const isAdmin = context?.user?.role === 'admin';
 
   useEffect(() => {
     const fetchForums = async () => {
@@ -39,12 +39,22 @@ const LandingPage = ({ navigation }) => {
           },
         });
         const data = await response.json();
-        setForums(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
 
-        // Collect all images from the posts
+        // Find the posts with the maximum likes
+        const maxLikes = Math.max(...data.map(post => post.likes));
+        const topLikedPosts = data.filter(post => post.likes === maxLikes);
+
+        // Sort posts by createdAt and bring top liked posts to the front
+        const sortedPosts = [
+          ...topLikedPosts,
+          ...data.filter(post => post.likes !== maxLikes)
+        ].sort((b, a) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        setForums(sortedPosts);
+
+        // Collect all images from the posts for the carousel
         const allImages = data.flatMap(post => post.images || []);
         setImages(allImages); // Set images for the carousel
-
       } catch (error) {
         setError('Error fetching forums');
       } finally {
@@ -53,6 +63,7 @@ const LandingPage = ({ navigation }) => {
     };
     fetchForums();
   }, [refresh]);
+
 
   const triggerRefresh = () => setRefresh(!refresh);
 
@@ -144,133 +155,143 @@ const LandingPage = ({ navigation }) => {
       });
     };
 
-
-  const renderForumItem = ({ item }) => (
-    <View style={styles.forumCard}>
-      <View style={styles.userContainer}>
-        {item.user?.image ? (
-          <Image source={{ uri: item.user.image }} style={styles.userImage} />
-        ) : (
-          <Text>No profile image</Text>
-        )}
-        <Text style={styles.forumUser}>{item.user?.name || 'Unknown'}</Text>
-      </View>
-      <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
-      <Text style={styles.forumTitle}>{item.title}</Text>
-      <Text style={styles.forumContent}>{item.content}</Text>
-      {/* {item.images.length > 0 && (
-        <Image source={{ uri: item.images[0] }} style={styles.forumImage} />
-      )} */}
-      {item.images && item.images.length > 0 && (
-        <View style={styles.imageContainer}>
-          <Swiper
-            style={styles.swiper}
-            showsButtons={false}
-            autoplay
-            autoplayTimeout={10}
-          >
-            {item.images.map((image, index) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={styles.carouselImage}
-                resizeMode="cover"
-              />
-            ))}
-          </Swiper>
+  const renderForumItem = ({ item }) => {
+    const isTopPost = item.likes === Math.max(...forums.map(post => post.likes)); 
+    return (
+      <View style={[styles.forumCard, isTopPost && styles.topPostCard]}>
+        {isTopPost && <Text style={styles.topPostLabel}>Trending Post</Text>}
+        <View style={styles.userContainer}>
+          {item.user?.image ? (
+            <Image source={{ uri: item.user.image }} style={styles.userImage} />
+          ) : (
+            <Text>No profile image</Text>
+          )}
+          <Text style={styles.forumUser}>{item.user?.name || 'Unknown'}</Text>
         </View>
-      )}
+        <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
+        <Text style={styles.forumTitle}>{item.title}</Text>
+        <Text style={styles.forumContent}>{item.content}</Text>
 
+        {/* Carousel for images */}
+        {item.images && item.images.length > 0 && (
+          <View style={styles.imageContainer}>
+            <Swiper
+              style={styles.swiper}
+              showsButtons={false}
+              autoplay
+              autoplayTimeout={10}
+            >
+              {item.images.map((image, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: image }}
+                  style={styles.carouselImage}
+                  resizeMode="cover"
+                />
+              ))}
+            </Swiper>
+          </View>
+        )}
 
-      <View style={styles.likesCommentsContainer}>
-        <TouchableOpacity style={styles.likeButton} onPress={() => handleLikePost(item._id)}>
-          <Icon name="thumbs-up" size={16} color="#007AFF" style={styles.likeIcon} />
-          <Text style={styles.likesText}>{item.likes} Likes</Text>
-        </TouchableOpacity>
-        <View style={styles.divider} />
-        <Text style={styles.commentCountText}>{item.comments.length} Comments</Text>
-      </View>
-      <View style={styles.commentsContainer}>
-        <Text style={styles.commentsHeader}>Comments:</Text>
-        {item.comments.map((comment, index) => {
-          if (!expandedComments[item._id] && index >= 1) return null;
-          return (
-            <View key={comment._id} style={styles.comment}>
-              {comment.user?.image && (
-                <Image source={{ uri: comment.user.image }} style={styles.commentUserImage} />
-              )}
-              <View style={styles.commentTextContainer}>
-                <Text style={styles.commentUser}>{comment.user?.name || 'Anonymous'}</Text>
-                <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleString()}</Text>
-                <Text style={styles.commentContent}>{comment.content}</Text>
+        {/* Likes and comments section */}
+        <View style={styles.likesCommentsContainer}>
+          <TouchableOpacity style={styles.likeButton} onPress={() => handleLikePost(item._id)}>
+            <Icon name="thumbs-up" size={16} color="#007AFF" style={styles.likeIcon} />
+            <Text style={styles.likesText}>{item.likes} Likes</Text>
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <Text style={styles.commentCountText}>{item.comments.length} Comments</Text>
+        </View>
 
-                <Menu
-                  visible={comment.showMenu}
-                  onDismiss={() => handleMenuDismiss(comment._id)}
-                  anchor={<TouchableOpacity onPress={() => handleMenuPress(comment._id)}><Icon name="ellipsis-v" size={20} color="#888" /></TouchableOpacity>}
-                >
-                  <Menu.Item onPress={() => handleEditComment(item._id, comment._id, comment.content)} title="Edit Comment" />
-                  <Menu.Item onPress={() => handleDeleteComment(item._id, comment._id)} title="Delete Comment" />
-                </Menu>
-
-
-                <TouchableOpacity onPress={() => setSelectedPostId(item._id) || setSelectedCommentId(comment._id) || setShowReplyModal(true)}>
-                  <Text style={styles.replyLink}>Reply</Text>
-                </TouchableOpacity>
-                {comment.replies && comment.replies.length > 0 && (
-                  <View style={styles.repliesContainer}>
-                    {comment.replies.slice(0, expandedReplies[comment._id] ? comment.replies.length : 1).map(reply => (
-                      <View key={reply._id} style={styles.reply}>
-                        {reply.user?.image && (
-                          <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
-                        )}
-                        <View style={styles.replyTextContainer}>
-                          <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
-                          <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
-                          <Text style={styles.replyContent}>{reply.content}</Text>
-                            {/* Ellipsis menu for reply */}
-                        <Menu
-                          visible={reply.showMenu}
-                          onDismiss={() => handleReplyMenuDismiss(reply._id)}
-                          anchor={
-                            <TouchableOpacity onPress={() => handleReplyMenuPress(reply._id)}>
-                              <Icon name="ellipsis-v" size={20} color="#888" />
-                            </TouchableOpacity>
-                          }
-                        >
-                          <Menu.Item onPress={() => handleEditReply(item._id, comment._id, reply._id, reply.content)} title="Edit Reply" />
-                          <Menu.Item onPress={() => handleDeleteReply(item._id, comment._id, reply._id)} title="Delete Reply" />
-                        </Menu>
-                        
-                        </View>
-                      </View>
-                    ))}
-                    <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
-                      <Text style={styles.replyButton}>{expandedReplies[comment._id] ? 'Hide Replies' : 'Show More Replies'}</Text>
-                    </TouchableOpacity>
-                  </View>
+        {/* Comment section */}
+        <View style={styles.commentsContainer}>
+          <Text style={styles.commentsHeader}>Comments:</Text>
+          {item.comments.map((comment, index) => {
+            if (!expandedComments[item._id] && index >= 1) return null;
+            return (
+              <View key={comment._id} style={styles.comment}>
+                {comment.user?.image && (
+                  <Image source={{ uri: comment.user.image }} style={styles.commentUserImage} />
                 )}
+                <View style={styles.commentTextContainer}>
+                  <Text style={styles.commentUser}>{comment.user?.name || 'Anonymous'}</Text>
+                  <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleString()}</Text>
+                  <Text style={styles.commentContent}>{comment.content}</Text>
+
+                  {/* Menu for comment actions */}
+                  <Menu
+                    visible={comment.showMenu}
+                    onDismiss={() => handleMenuDismiss(comment._id)}
+                    anchor={<TouchableOpacity onPress={() => handleMenuPress(comment._id)}><Icon name="ellipsis-v" size={20} color="#888" /></TouchableOpacity>}
+                  >
+                    <Menu.Item onPress={() => handleEditComment(item._id, comment._id, comment.content)} title="Edit Comment" />
+                    <Menu.Item onPress={() => handleDeleteComment(item._id, comment._id)} title="Delete Comment" />
+                  </Menu>
+
+                  {/* Reply section */}
+                  <TouchableOpacity onPress={() => setSelectedPostId(item._id) || setSelectedCommentId(comment._id) || setShowReplyModal(true)}>
+                    <Text style={styles.replyLink}>Reply</Text>
+                  </TouchableOpacity>
+
+                  {/* Replies */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <View style={styles.repliesContainer}>
+                      {comment.replies.slice(0, expandedReplies[comment._id] ? comment.replies.length : 1).map(reply => (
+                        <View key={reply._id} style={styles.reply}>
+                          {reply.user?.image && (
+                            <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
+                          )}
+                          <View style={styles.replyTextContainer}>
+                            <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
+                            <Text style={styles.replyDate}>{new Date(reply.createdAt).toLocaleString()}</Text>
+                            <Text style={styles.replyContent}>{reply.content}</Text>
+
+                            {/* Ellipsis menu for reply */}
+                            <Menu
+                              visible={reply.showMenu}
+                              onDismiss={() => handleReplyMenuDismiss(reply._id)}
+                              anchor={
+                                <TouchableOpacity onPress={() => handleReplyMenuPress(reply._id)}>
+                                  <Icon name="ellipsis-v" size={20} color="#888" />
+                                </TouchableOpacity>
+                              }
+                            >
+                              <Menu.Item onPress={() => handleEditReply(item._id, comment._id, reply._id, reply.content)} title="Edit Reply" />
+                              <Menu.Item onPress={() => handleDeleteReply(item._id, comment._id, reply._id)} title="Delete Reply" />
+                            </Menu>
+                          </View>
+                        </View>
+                      ))}
+                      <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
+                        <Text style={styles.replyButton}>{expandedReplies[comment._id] ? 'Hide Replies' : 'Show More Replies'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
+        {item.comments.length > 2 && (
+          <TouchableOpacity onPress={() => toggleComments(item._id)}>
+            <Text style={styles.replyButton}>{expandedComments[item._id] ? 'See Less Comments' : 'See More Comments'}</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Comment Input */}
+        <View style={styles.commentInputContainer}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="Add a comment..."
+            value={comment}
+            onChangeText={setComment}
+          />
+          <Button title="Comment" onPress={() => handleAddComment(item._id)} />
+        </View>
       </View>
-      {item.comments.length > 2 && (
-        <TouchableOpacity onPress={() => toggleComments(item._id)}>
-          <Text style={styles.replyButton}>{expandedComments[item._id] ? 'See Less Comments' : 'See More Comments'}</Text>
-        </TouchableOpacity>
-      )}
-      <View style={styles.commentInputContainer}>
-        <TextInput
-          style={styles.commentInput}
-          placeholder="Add a comment..."
-          value={comment}
-          onChangeText={setComment}
-        />
-        <Button title="Comment" onPress={() => handleAddComment(item._id)} />
-      </View>
-    </View>
-  );
+    );
+  };
+
 
   const handleReplyMenuPress = (replyId) => {
     const updatedForums = forums.map(forum => ({
@@ -287,7 +308,7 @@ const LandingPage = ({ navigation }) => {
     }));
     setForums(updatedForums);
   };
-  
+
   const handleReplyMenuDismiss = (replyId) => {
     const updatedForums = forums.map(forum => ({
       ...forum,
@@ -303,7 +324,7 @@ const LandingPage = ({ navigation }) => {
     }));
     setForums(updatedForums);
   };
-  
+
   const handleEditReply = (postId, commentId, replyId, currentContent) => {
     navigation.navigate('UpdateReply', {
       postId,
@@ -312,7 +333,7 @@ const LandingPage = ({ navigation }) => {
       currentContent
     });
   };
-  
+
   // Handle delete reply
   const handleDeleteReply = async (postId, commentId, replyId) => {
     try {
@@ -425,11 +446,10 @@ const LandingPage = ({ navigation }) => {
 
 };
 const styles = StyleSheet.create({
-
-   carouselImage: {
-    width: "100%", // Ensure the image spans the entire width
-    height: "100%", // Fill the container height
-    resizeMode: "cover", // Keep the image aspect ratio intact while covering the space
+  carouselImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   likesCommentsContainer: {
     flexDirection: 'row',
@@ -471,7 +491,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ccc',
     borderRadius: 8,
-    padding: 10,
+    padding: 13,
     marginBottom: 10,
     backgroundColor: "white"
   },
@@ -483,12 +503,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 5,
+    position: 'relative', // Ensure the user container is relative for label positioning
   },
   userImage: {
     width: 40,
     height: 40,
     borderRadius: 20,
     marginRight: 10,
+    zIndex: 0, // Ensure the profile image stays in the background
   },
   forumUser: {
     fontSize: 17,
@@ -615,6 +637,25 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
   },
+  topPostCard: {
+    borderColor: '#FFD700',  // Gold border for top post
+    borderWidth: 2,
+    backgroundColor: '#FFF8DC',  // Light yellow background
+    marginTop: 20, 
+  },
+  topPostLabel: {
+    position: 'absolute',
+    top: -15, // Adjust to be just above the profile image
+    left: 10,
+    backgroundColor: '#FFD700',
+    color: '#000',
+    padding: 5,
+    fontSize: 14,
+    fontWeight: 'bold',
+    borderRadius: 5,
+    zIndex: 1, // Ensure label is above the image
+  },
 });
+
 
 export default LandingPage;
