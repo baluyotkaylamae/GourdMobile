@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Alert, Button } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import AuthGlobal from '../../Context/Store/AuthGlobal';
@@ -19,6 +19,19 @@ const Chatbox = ({ route }) => {
   const [visibleTimestamp, setVisibleTimestamp] = useState(null); // ID of the clicked message
   const flatListRef = useRef(); // Reference for FlatList
   const socket = useRef(null); // Socket reference
+  const [isModalVisible, setModalVisible] = useState(false); // Modal visibility
+  const [selectedMessageId, setSelectedMessageId] = useState(null); // Selected message for deletion
+
+  const handleLongPress = (messageId) => {
+    setSelectedMessageId(messageId);
+    setModalVisible(true); // Show the modal
+  };
+
+  const confirmDeleteMessage = () => {
+    deleteMessage(selectedMessageId); // Call deleteMessage function
+    setModalVisible(false); // Close the modal
+    setSelectedMessageId(null); // Reset selected message
+  };
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
@@ -180,79 +193,113 @@ const Chatbox = ({ route }) => {
     }
   };
   
+  const deleteMessage = async (messageId) => {
+    try {
+        const storedToken = await AsyncStorage.getItem('jwt');
+
+        if (!storedToken) {
+            throw new Error('Authentication failed');
+        }
+
+        const response = await axios.delete(`${baseURL}chat/${messageId}`, {
+            headers: { Authorization: `Bearer ${storedToken}` },
+        });
+
+        if (response.data.success) {
+            // Remove the message from local state
+            setMessages((prevMessages) =>
+                prevMessages.filter((chat) => chat._id !== messageId)
+            );
+        }
+    } catch (err) {
+        console.error('Error deleting message:', err.message);
+    }
+};
+
   const renderMessage = ({ item }) => {
     const senderId = item.sender?._id || item.sender?.id;
     const currentUserId = context.stateUser?.user?.userId;
     const isMyMessage = senderId === currentUserId;
 
     return (
-      <View
-        style={[
-          styles.messageWrapper,
-          isMyMessage ? styles.myMessageWrapper : styles.otherMessageWrapper,
-        ]}
-      >
-        {!isMyMessage && (
-          <Image
-            source={{ uri: item.sender?.image || 'https://via.placeholder.com/50' }}
-            onError={(e) => console.log('Image failed to load:', e.nativeEvent.error)}
-            style={styles.userAvatar}
-          />
-        )}
+      <TouchableOpacity onLongPress={() => handleLongPress(item._id)}>
         <View
           style={[
-            styles.messageContainer,
-            isMyMessage ? styles.myMessage : styles.otherMessage,
+            styles.messageWrapper,
+            isMyMessage ? styles.myMessageWrapper : styles.otherMessageWrapper,
           ]}
         >
-          <Text style={styles.messageText}>{item.message}</Text>
-          <Text style={styles.timestamp}>{formatTimestamp(item.createdAt)}</Text>
+          {!isMyMessage && (
+            <Image
+              source={{ uri: item.sender?.image || 'https://via.placeholder.com/50' }}
+              onError={(e) => console.log('Image failed to load:', e.nativeEvent.error)}
+              style={styles.userAvatar}
+            />
+          )}
+          <View
+            style={[
+              styles.messageContainer,
+              isMyMessage ? styles.myMessage : styles.otherMessage,
+            ]}
+          >
+            <Text style={styles.messageText}>{item.message}</Text>
+            <Text style={styles.timestamp}>{formatTimestamp(item.createdAt)}</Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
+return (
+  <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    {/* Render messages */}
+    {loading ? (
+      <ActivityIndicator size="large" color="#0000ff" />
+    ) : error ? (
+      <Text style={styles.errorText}>{error}</Text>
+    ) : (
+      <FlatList
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
+        style={styles.messageList}
+      />
+    )}
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    {/* Input for new messages */}
+    <View style={styles.inputContainer}>
+      <TextInput
+        style={styles.textInput}
+        value={newMessage}
+        onChangeText={setNewMessage}
+        placeholder="Type your message..."
+      />
+      <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+        <Icon name="arrow-right" size={20} color="#fff" />
+      </TouchableOpacity>
+    </View>
+
+    {/* Modal for confirmation */}
+    <Modal
+      visible={isModalVisible}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setModalVisible(false)}
     >
-      {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
-      ) : error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : (
-        <>
-          {messages.length === 0 ? (
-            <Text style={styles.noMessagesText}>No messages yet</Text>
-          ) : (
-            <FlatList
-              data={messages}
-              renderItem={renderMessage}
-              keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
-              style={styles.messageList}
-              ref={flatListRef}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-              onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            />
-          )}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              value={newMessage}
-              onChangeText={setNewMessage}
-              placeholder="Type your message..."
-            />
-            <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-              <Icon name="arrow-right" size={20} color="#fff" />
-            </TouchableOpacity>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text>Do you want to delete this message?</Text>
+          <View style={styles.modalButtons}>
+            <Button title="Cancel" onPress={() => setModalVisible(false)} />
+            <Button title="Okay" onPress={confirmDeleteMessage} />
           </View>
-        </>
-      )}
-    </KeyboardAvoidingView>
-  );
+        </View>
+      </View>
+    </Modal>
+  </KeyboardAvoidingView>
+);
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -337,6 +384,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     marginTop: 5,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
   },
 });
 

@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#EAF6F6',
+        backgroundColor: '#E0F8E6',
     },
     container: {
         flex: 1,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 8,
         marginTop: 20, 
-        width: '100%', 
+        width: '90%', 
     },
     backButtonText: {
         color: 'white',
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     },
     infoContainer: {
         marginBottom: 15,
-        width: '100%',
+        width: '90%',
     },
     infoLabel: {
         color: '#118a7e',
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
         marginTop: 30,
-        width: '100%',
+        width: '90%',
     },
     saveProfileText: {
         color: 'white',
