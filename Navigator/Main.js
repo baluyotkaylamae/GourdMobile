@@ -15,6 +15,7 @@ import UpdateCommentScreen from '../screens/Post/UpdateComment'
 import UpdateReplyScreen from '../screens/Post/UpdateReplies'
 import UpdatePostScreen from "../screens/Post/editPost";
 import GourdIdentify from "../screens/GourdIdentify";
+import Monitoring from "../screens/Monitoring";
 import Gourdchat from "./chatNavigator";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,7 +82,7 @@ const MainTabs = () => {
         options={{
           title: 'Forum Page',
           backgroundColor: '#C3E8C9',
-          tabBarIcon: ({ color }) => <Icon name="home" color={color} size={30} />,
+          tabBarIcon: ({ color }) => <Icon name="home" color={color} size={25} />,
         }}
       />
 
@@ -90,7 +91,7 @@ const MainTabs = () => {
         component={Gourdchat}
         options={{
           title: 'Chat Room',
-          tabBarIcon: ({ color }) => <Icon name="comment" color={color} size={30} />,
+          tabBarIcon: ({ color }) => <Icon name="comment" color={color} size={25} />,
         }}
       />
 
@@ -99,7 +100,7 @@ const MainTabs = () => {
         component={CreatePost}
         options={{
           title: 'Create Post',
-          tabBarIcon: ({ color }) => <Icon name="plus" color={color} size={30} />, // Add icon for CreatePost
+          tabBarIcon: ({ color }) => <Icon name="plus" color={color} size={25} />, // Add icon for CreatePost
         }}
       />
       <Tab.Screen
@@ -107,7 +108,7 @@ const MainTabs = () => {
         component={InfoNavigator}
         options={{
           title: 'Info Zone',
-          tabBarIcon: ({ color }) => <Icon name="book" color={color} size={30} />, // Add icon for CreatePost
+          tabBarIcon: ({ color }) => <Icon name="book" color={color} size={25} />, // Add icon for CreatePost
         }}
       />
 
@@ -116,7 +117,16 @@ const MainTabs = () => {
         component={GourdIdentify}
         options={{
           title: 'Gourdtify',
-          tabBarIcon: ({ color }) => <Icon name="camera" color={color} size={30} />,
+          tabBarIcon: ({ color }) => <Icon name="camera" color={color} size={25} />,
+        }}
+      />
+
+      <Tab.Screen
+        name="Monitoring"
+        component={Monitoring}
+        options={{
+          title: 'Gourd Monitoring',
+          tabBarIcon: ({ color }) => <Icon name="bar-chart" color={color} size={25} />,
         }}
       />
 
@@ -125,7 +135,7 @@ const MainTabs = () => {
         component={UserNavigator}
         options={{
           title: 'User Profile',
-          tabBarIcon: ({ color }) => <Icon name="user" color={color} size={30} />,
+          tabBarIcon: ({ color }) => <Icon name="user" color={color} size={25} />,
         }}
       />
 
@@ -140,7 +150,7 @@ const MainTabs = () => {
                 name="cog"
                 style={{ position: "relative" }}
                 color={color}
-                size={30}
+                size={25}
               />
             ),
           }}

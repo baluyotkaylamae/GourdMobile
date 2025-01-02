@@ -10,6 +10,15 @@ const AdminMenu = ({ navigation }) => {
                 <Text style={styles.buttonText}>View Categories</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("GourdType")}>
+                <Text style={styles.buttonText}> View Gourd Types</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("GourdVarieties")}>
+                <Text style={styles.buttonText}> View Gourd Varieties</Text>
+            </TouchableOpacity>
+
+
             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Users")}>
                 <Text style={styles.buttonText}>Manage Users</Text>
             </TouchableOpacity>
