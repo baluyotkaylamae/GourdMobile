@@ -35,6 +35,7 @@ const MonitoringScreen = () => {
   const [GourdTypeOpen, setGourdTypeOpen] = useState(false);
   const [VarietyOpen, setVarietyOpen] = useState(false);
   const [StatusOpen, setStatusOpen] = useState(false);
+  const [selectedGourdType, setSelectedGourdType] = useState(null);
 
   const [monitoringData, setMonitoringData] = useState({
     gourdType: "",
@@ -106,9 +107,13 @@ const MonitoringScreen = () => {
     setDatePickerVisible(null);
     if (selectedDate) {
       if (datePickerVisible === "pollination") {
-        setMonitoringData({ ...monitoringData, dateOfPollination: selectedDate });
-      } else if (datePickerVisible === "finalization") {
-        setMonitoringData({ ...monitoringData, dateOfFinalization: selectedDate });
+        const finalizationDate = new Date(selectedDate);
+        finalizationDate.setDate(selectedDate.getDate() + 21);
+        setMonitoringData((prevState) => ({
+          ...prevState,
+          dateOfPollination: selectedDate,
+          dateOfFinalization: finalizationDate,
+        }));
       }
     }
   };
@@ -180,10 +185,10 @@ const MonitoringScreen = () => {
         monitorings.map((monitoring) =>
           monitoring._id === response.data._id
             ? {
-                ...response.data,
-                gourdType: gourdTypes.find((gourd) => gourd._id === response.data.gourdType),
-                variety: gourdVarieties.find((variety) => variety._id === response.data.variety),
-              }
+              ...response.data,
+              gourdType: gourdTypes.find((gourd) => gourd._id === response.data.gourdType),
+              variety: gourdVarieties.find((variety) => variety._id === response.data.variety),
+            }
             : monitoring
         )
       );
@@ -208,13 +213,17 @@ const MonitoringScreen = () => {
   };
 
   const resetMonitoringData = () => {
+    const today = new Date();
+    const finalizationDate = new Date(today);
+    finalizationDate.setDate(today.getDate() + 21);
+
     setMonitoringData({
       gourdType: "",
       variety: "",
-      dateOfPollination: new Date(),
+      dateOfPollination: today,
       pollinatedFlowers: 0,
       fruitsHarvested: "",
-      dateOfFinalization: new Date(),
+      dateOfFinalization: finalizationDate,
       status: "In Progress",
     });
   };
@@ -231,10 +240,36 @@ const MonitoringScreen = () => {
     setModalVisible(true);
   };
 
+  const handleModalClose = () => {
+    resetMonitoringData(); // Clear the monitoringData
+    setModalVisible(false); // Close the modal
+    setCreateModalVisible(false); // Close the create modal
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchMonitoringRecords();
     await fetchGourdData();
+  };
+
+  const confirmDeleteMonitoring = (id) => {
+    Alert.alert(
+      "Delete Monitoring",
+      "Are you sure you want to delete this monitoring?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Delete cancelled"),
+          style: "cancel"
+        },
+        {
+          text: "Yes",
+          onPress: () => deleteMonitoring(id),
+          style: "destructive"
+        }
+      ],
+      { cancelable: true }
+    );
   };
 
   useEffect(() => {
@@ -245,26 +280,58 @@ const MonitoringScreen = () => {
 
   if (loading) return <ActivityIndicator size="large" color="#0000ff" />;
   if (error) return <Text>{error}</Text>;
-  
+
+  const filteredMonitorings = selectedGourdType
+    ? monitorings.filter((item) => item.gourdType._id === selectedGourdType)
+    : monitorings;
+
   return (
     <View style={{ backgroundColor: "#F0F0F0", flex: 1 }}>
+      <View style={{ zIndex: 3000, margin: 10 }}>
+        <DropDownPicker
+          open={GourdTypeOpen}
+          value={selectedGourdType}
+          items={[
+            { label: "All", value: null },
+            ...gourdTypes.map((gourd) => ({
+              label: gourd.name,
+              value: gourd._id,
+            })),
+          ]}
+          setOpen={setGourdTypeOpen}
+          setValue={(callbackOrValue) => {
+            const value = typeof callbackOrValue === "function"
+              ? callbackOrValue(selectedGourdType)
+              : callbackOrValue;
+            setSelectedGourdType(value);
+          }}
+          placeholder="Select Gourd Type"
+          style={styles.input}
+          dropDownStyle={styles.dropdown}
+        />
+      </View>
+
       <FlatList
-        data={monitorings}
+        data={filteredMonitorings}
         renderItem={({ item }) => (
           <View style={styles.item}>
             <Text style={styles.itemText}>
               {item.variety?.name || "Unknown"} - {item.gourdType?.name || "Unknown"}
             </Text>
-            <Text style={styles.description}>{item.status}</Text>
+            <Text style={styles.description}>
+              {new Date(item.dateOfPollination).toDateString()}
+            </Text>
+            <Text
+              style={[
+                styles.description,
+                item.status === "In Progress" && { color: "orange" },
+                item.status === "Completed" && { color: "green" },
+                item.status === "Failed" && { color: "red" },
+              ]}
+            >
+              {item.status}
+            </Text>
             <View style={styles.iconContainer}>
-              <EasyButton
-                danger
-                medium
-                onPress={() => deleteMonitoring(item._id)}
-                style={styles.icon}
-              >
-                <Icon name="trash" size={20} color="white" />
-              </EasyButton>
               <EasyButton
                 primary
                 medium
@@ -272,6 +339,14 @@ const MonitoringScreen = () => {
                 style={styles.icon}
               >
                 <Icon name="pencil" size={20} color="white" />
+              </EasyButton>
+              <EasyButton
+                danger
+                medium
+                onPress={() => confirmDeleteMonitoring(item._id)}
+                style={styles.icon}
+              >
+                <Icon name="trash" size={20} color="white" />
               </EasyButton>
             </View>
           </View>
@@ -283,7 +358,10 @@ const MonitoringScreen = () => {
 
       <TouchableOpacity
         style={styles.floatingButton}
-        onPress={() => setCreateModalVisible(true)}
+        onPress={() => {
+          resetMonitoringData();
+          setCreateModalVisible(true);
+        }}
       >
         <Icon name="plus" size={24} color="white" />
       </TouchableOpacity>
@@ -293,56 +371,59 @@ const MonitoringScreen = () => {
         animationType="slide"
         transparent={true}
         visible={createModalVisible}
-        onRequestClose={() => setCreateModalVisible(false)}
+        onRequestClose={handleModalClose}
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <DropDownPicker
-              open={GourdTypeOpen}
-              value={monitoringData.gourdType ? monitoringData.gourdType._id : null}
-              items={gourdTypes.map((gourd) => ({
-                label: gourd.name,
-                value: gourd._id,
-              }))}
-              setOpen={setGourdTypeOpen}
-              setValue={(callbackOrValue) => {
-                const value = typeof callbackOrValue === "function"
-                  ? callbackOrValue(monitoringData.gourdType ? monitoringData.gourdType._id : null)
-                  : callbackOrValue;
-                setMonitoringData((prevState) => ({
-                  ...prevState,
-                  gourdType: gourdTypes.find((gourd) => gourd._id === value),
-                  // variety: null,
-                }));
-              }}
-              placeholder="Select Gourd Type"
-              style={styles.input}
-              dropDownStyle={styles.dropdown}
-            />
-
-            <DropDownPicker
-              open={VarietyOpen}
-              value={monitoringData.variety ? monitoringData.variety._id : null}
-              items={gourdVarieties
-                .filter((variety) => variety.gourdType._id === (monitoringData.gourdType ? monitoringData.gourdType._id : null))
-                .map((variety) => ({
-                  label: variety.name,
-                  value: variety._id,
+            <View style={{ zIndex: 2000 }}>
+              <DropDownPicker
+                open={GourdTypeOpen}
+                value={monitoringData.gourdType ? monitoringData.gourdType._id : null}
+                items={gourdTypes.map((gourd) => ({
+                  label: gourd.name,
+                  value: gourd._id,
                 }))}
-              setOpen={setVarietyOpen}
-              setValue={(callbackOrValue) => {
-                const value = typeof callbackOrValue === "function"
-                  ? callbackOrValue(monitoringData.variety ? monitoringData.variety._id : null)
-                  : callbackOrValue;
-                setMonitoringData((prevState) => ({
-                  ...prevState,
-                  variety: gourdVarieties.find((variety) => variety._id === value),
-                }));
-              }}
-              placeholder="Select Gourd Variety"
-              style={styles.input}
-              dropDownStyle={styles.dropdown}
-            />
+                setOpen={setGourdTypeOpen}
+                setValue={(callbackOrValue) => {
+                  const value = typeof callbackOrValue === "function"
+                    ? callbackOrValue(monitoringData.gourdType ? monitoringData.gourdType._id : null)
+                    : callbackOrValue;
+                  setMonitoringData((prevState) => ({
+                    ...prevState,
+                    gourdType: gourdTypes.find((gourd) => gourd._id === value),
+                  }));
+                }}
+                placeholder="Select Gourd Type"
+                style={styles.input}
+                dropDownStyle={styles.dropdown}
+              />
+            </View>
+
+            <View style={{ zIndex: 1000 }}>
+              <DropDownPicker
+                open={VarietyOpen}
+                value={monitoringData.variety ? monitoringData.variety._id : null}
+                items={gourdVarieties
+                  .filter((variety) => variety.gourdType._id === (monitoringData.gourdType ? monitoringData.gourdType._id : null))
+                  .map((variety) => ({
+                    label: variety.name,
+                    value: variety._id,
+                  }))}
+                setOpen={setVarietyOpen}
+                setValue={(callbackOrValue) => {
+                  const value = typeof callbackOrValue === "function"
+                    ? callbackOrValue(monitoringData.variety ? monitoringData.variety._id : null)
+                    : callbackOrValue;
+                  setMonitoringData((prevState) => ({
+                    ...prevState,
+                    variety: gourdVarieties.find((variety) => variety._id === value),
+                  }));
+                }}
+                placeholder="Select Gourd Variety"
+                style={styles.input}
+                dropDownStyle={styles.dropdown}
+              />
+            </View>
 
             <TouchableOpacity
               style={styles.input}
@@ -352,7 +433,6 @@ const MonitoringScreen = () => {
             </TouchableOpacity>
             <Text>Number of pollinated flowers</Text>
             <View style={styles.counterContainer}>
-
               <TouchableOpacity
                 style={styles.counterButton}
                 onPress={() => setMonitoringData({ ...monitoringData, pollinatedFlowers: Math.max(0, monitoringData.pollinatedFlowers - 1) })}
@@ -369,25 +449,20 @@ const MonitoringScreen = () => {
             </View>
 
             <TextInput
-              value={monitoringData.fruitsHarvested}
+              value="0"
               style={styles.input}
-              onChangeText={(value) => setMonitoringData({ ...monitoringData, fruitsHarvested: value })}
+              editable={false}
               placeholder="Fruits Harvested"
             />
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => setDatePickerVisible("finalization")}
-            >
-              <Text>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
-            </TouchableOpacity>
+            <Text style={styles.input}>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
             <DropDownPicker
               open={StatusOpen}
-              value={monitoringData.status}
+              value="In Progress"
               items={statusOptions}
               setOpen={setStatusOpen}
               setValue={(callbackOrValue) => {
                 const value = typeof callbackOrValue === "function"
-                  ? callbackOrValue(monitoringData.status)
+                  ? callbackOrValue("In Progress")
                   : callbackOrValue;
                 setMonitoringData((prevState) => ({
                   ...prevState,
@@ -397,10 +472,16 @@ const MonitoringScreen = () => {
               placeholder="Select Status"
               style={styles.input}
               dropDownStyle={styles.dropdown}
+              disabled={true} // Disable the dropdown
             />
-            <EasyButton medium primary onPress={addMonitoring}>
-              <Text style={{ color: "white", fontWeight: "bold" }}>Create</Text>
-            </EasyButton>
+            <View style={styles.buttonRow}>
+              <EasyButton medium primary onPress={addMonitoring}>
+                <Text style={{ color: "white", fontWeight: "bold" }}>Create</Text>
+              </EasyButton>
+              <EasyButton medium style={styles.cancelButton} onPress={handleModalClose}>
+                <Text style={{ color: "white", fontWeight: "bold" }}>Cancel</Text>
+              </EasyButton>
+            </View>
           </View>
         </View>
         {datePickerVisible && (
@@ -412,17 +493,15 @@ const MonitoringScreen = () => {
           />
         )}
       </Modal>
-
       {/* Edit Modal */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={handleModalClose}
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-
             <DropDownPicker
               open={GourdTypeOpen}
               value={monitoringData.gourdType._id}
@@ -444,6 +523,7 @@ const MonitoringScreen = () => {
               placeholder="Select Gourd Type"
               style={styles.input}
               dropDownStyle={styles.dropdown}
+              disabled={true} // Disable the dropdown
             />
 
             <DropDownPicker
@@ -468,45 +548,23 @@ const MonitoringScreen = () => {
               placeholder="Select Gourd Variety"
               style={styles.input}
               dropDownStyle={styles.dropdown}
+              disabled={true} // Disable the dropdown
             />
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => setDatePickerVisible("pollination")}
-            >
-              <Text>{new Date(monitoringData.dateOfPollination).toDateString()}</Text>
-            </TouchableOpacity>
+
+            <Text style={styles.input}>{new Date(monitoringData.dateOfPollination).toDateString()}</Text>
             <Text>Number of pollinated flowers</Text>
-            <View style={styles.counterContainer}>
-              <TouchableOpacity
-                style={styles.counterButton}
-                onPress={() => setMonitoringData({ ...monitoringData, pollinatedFlowers: Math.max(0, monitoringData.pollinatedFlowers - 1) })}
-              >
-                <Text>-</Text>
-              </TouchableOpacity>
-              <Text>{monitoringData.pollinatedFlowers}</Text>
-              <TouchableOpacity
-                style={styles.counterButton}
-                onPress={() => setMonitoringData({ ...monitoringData, pollinatedFlowers: monitoringData.pollinatedFlowers + 1 })}
-              >
-                <Text>+</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.input}>{monitoringData.pollinatedFlowers}</Text>
+
             <TextInput
               value={monitoringData.fruitsHarvested.toString()}
               style={styles.input}
-              onChangeText={(value) => {
-                console.log("Fruits Harvested Input:", value);
-                setMonitoringData({ ...monitoringData, fruitsHarvested: value });
-              }}
+              onChangeText={(value) => setMonitoringData({ ...monitoringData, fruitsHarvested: value })}
               placeholder="Fruits Harvested"
+              keyboardType="numeric"
             />
-            
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => setDatePickerVisible("finalization")}
-            >
-              <Text>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
-            </TouchableOpacity>
+
+            <Text style={styles.input}>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
+
             <DropDownPicker
               open={StatusOpen}
               value={monitoringData.status}
@@ -525,19 +583,22 @@ const MonitoringScreen = () => {
               style={styles.input}
               dropDownStyle={styles.dropdown}
             />
-            <EasyButton medium primary onPress={updateMonitoring}>
-              <Text style={{ color: "white", fontWeight: "bold" }}>Update</Text>
-            </EasyButton>
+            <View style={styles.buttonRow}>
+              <EasyButton medium primary onPress={() => {
+                if (parseInt(monitoringData.fruitsHarvested) > monitoringData.pollinatedFlowers) {
+                  Alert.alert("Error", "Fruits harvested cannot exceed the number of pollinated flowers.");
+                } else {
+                  updateMonitoring();
+                }
+              }}>
+                <Text style={{ color: "white", fontWeight: "bold" }}>Update</Text>
+              </EasyButton>
+              <EasyButton medium danger onPress={handleModalClose}>
+                <Text style={{ color: "white", fontWeight: "bold" }}>Cancel</Text>
+              </EasyButton>
+            </View>
           </View>
         </View>
-        {datePickerVisible && (
-          <DateTimePicker
-            value={datePickerVisible === "pollination" ? monitoringData.dateOfPollination : monitoringData.dateOfFinalization}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
       </Modal>
     </View>
   );
@@ -596,8 +657,6 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#FFF",
     zIndex: 10000, // Ensure dropdown is on top of other elements
-    position: "absolute", // Ensure it is positioned relative to its parent container
-    top: 100, // Adjust the top offset to ensure it doesn't overlap with the gourd variety input box
   },
   input: {
     backgroundColor: "#FFFFFF",
@@ -609,6 +668,15 @@ const styles = StyleSheet.create({
   },
   counterContainer: { flexDirection: "row", alignItems: "center" },
   counterButton: { margin: 5, padding: 10, backgroundColor: "#ccc", borderRadius: 5 },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  cancelButton: {
+    backgroundColor: "red",
+    marginLeft: 10,
+  },
 });
 
 export default MonitoringScreen;
