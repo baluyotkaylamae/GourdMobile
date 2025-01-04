@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import io from 'socket.io-client';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { filterBadWords } from '../filteredwords';
+import { socket } from '../../socket/index';
 
 const Chatbox = ({ route }) => {
   const { userId: receiverId } = route.params; // Receiver ID from navigation params
@@ -18,7 +19,7 @@ const Chatbox = ({ route }) => {
   const [newMessage, setNewMessage] = useState(''); // Input for the new message
   const [visibleTimestamp, setVisibleTimestamp] = useState(null); // ID of the clicked message
   const flatListRef = useRef(); // Reference for FlatList
-  const socket = useRef(null); // Socket reference
+  // const socket = useRef(null); // Socket reference
   const [isModalVisible, setModalVisible] = useState(false); // Modal visibility
   const [selectedMessageId, setSelectedMessageId] = useState(null); // Selected message for deletion
 
@@ -52,48 +53,49 @@ const Chatbox = ({ route }) => {
     return date.toLocaleDateString();
   };
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      setLoading(true);
-      setError(null);
+  const fetchMessages = async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const storedToken = await AsyncStorage.getItem('jwt');
-        const senderId = context.stateUser?.user?.userId;
+    try {
+      const storedToken = await AsyncStorage.getItem('jwt');
+      const senderId = context.stateUser?.user?.userId;
 
-        if (!senderId || !storedToken) {
-          throw new Error('Authentication failed');
-        }
-
-        console.log(`Fetching messages between senderId: ${senderId} and receiverId: ${receiverId}`);
-        const response = await axios.get(
-          `${baseURL}chat/messages/${senderId}/${receiverId}`,
-          { headers: { Authorization: `Bearer ${storedToken}` } }
-        );
-
-        console.log('Fetched messages:', response.data);
-        // setMessages(response.data.messages || []);
-        setMessages(response.data.messages.map(message => ({
-          ...message,
-          message: filterBadWords(message.message) // Filter incoming message
-        })) || []);
-
-        // Once the messages are fetched, mark them as read
-        await markMessagesAsRead(response.data.messages || []);
-
-      } catch (err) {
-        if (err.response?.status === 404) {
-          console.warn('No messages found, setting empty message list');
-          setMessages([]); // No messages yet
-        } else {
-          console.error('Error fetching messages:', err.response?.data || err.message);
-          setError(err.message || 'Failed to load messages');
-        }
-      } finally {
-        setLoading(false);
+      if (!senderId || !storedToken) {
+        throw new Error('Authentication failed');
       }
-    };
 
+      // console.log(`Fetching messages between senderId: ${senderId} and receiverId: ${receiverId}`);
+      const response = await axios.get(
+        `${baseURL}chat/messages/${senderId}/${receiverId}`,
+        { headers: { Authorization: `Bearer ${storedToken}` } }
+      );
+
+      // console.log('Fetched messages:', response.data);
+      // setMessages(response.data.messages || []);
+      setMessages(response.data.messages.map(message => ({
+        ...message,
+        message: filterBadWords(message.message) // Filter incoming message
+      })) || []);
+
+      // Once the messages are fetched, mark them as read
+      await markMessagesAsRead(response.data.messages || []);
+
+    } catch (err) {
+      if (err.response?.status === 404) {
+        // console.warn('No messages found, setting empty message list');
+        setMessages([]); // No messages yet
+      } else {
+        // console.error('Error fetching messages:', err.response?.data || err.message);
+        setError(err.message || 'Failed to load messages');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+  
     fetchMessages();
   }, [receiverId, context.stateUser]);
 
@@ -110,32 +112,32 @@ const Chatbox = ({ route }) => {
         { headers: { Authorization: `Bearer ${storedToken}` } }
       );
 
-      console.log('Marked messages as read:', response.data);
+      // console.log('Marked messages as read:', response.data);
       // Optionally, update the local state to reflect changes
       setMessages(prevMessages =>
         prevMessages.map(msg => ({ ...msg, isRead: true })) // Update all messages to isRead: true
       );
     } catch (err) {
-      console.error('Error marking messages as read:', err.message);
+      // console.error('Error marking messages as read:', err.message);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
       const storedToken = AsyncStorage.getItem('jwt');
-      socket.current = io(baseURL, {
-        query: { token: storedToken },
-      });
-
-      socket.current.on('connect', () => {
-        console.log('Connected to socket server');
-      });
-
-      // socket.current.on('message', (message) => {
-      //   console.log('New message received:', message);
-      //   setMessages((prevMessages) => [...prevMessages, message]);
+      // socket = io(baseURL, {
+      //   query: { token: storedToken },
       // });
-      socket.current.on('message', (message) => {
+
+      // socket.connect();
+
+      socket.on('connect', () => {
+        // console.log('Connected to socket server');
+      });
+      // console.log(context.stateUser?.user?.userId)
+      socket.emit('joinRoom', { userId: context.stateUser?.user?.userId, receiverId });
+
+      socket.emit('message', (message) => {
         setMessages((prevMessages) => [
           ...prevMessages,
           { ...message, message: filterBadWords(message.message) } // Filter incoming message
@@ -143,8 +145,8 @@ const Chatbox = ({ route }) => {
       });
 
       return () => {
-        socket.current.disconnect();
-        console.log('Disconnected from socket server');
+        socket.disconnect();
+        // console.log('Disconnected from socket server');
       };
     }, [receiverId])
   );
@@ -157,7 +159,7 @@ const Chatbox = ({ route }) => {
     // Check if the message contains filtered words
     if (filteredMessage !== newMessage.trim()) {
       // Show a warning or prevent the message from being sent
-      console.warn("Message contains inappropriate content and will not be sent.");
+      // console.warn("Message contains inappropriate content and will not be sent.");
       return;
     }
   
@@ -186,13 +188,23 @@ const Chatbox = ({ route }) => {
         messageData,
         { headers: { Authorization: `Bearer ${storedToken}` } }
       );
-  
-      socket.current.emit('message', response.data.message);
+
+      // console.log(response.data);
+
+      socket.emit('sendMessage', {...response.data.chat,userId:response.data.chat.user});
     } catch (err) {
-      console.error('Error sending message:', err.message);
+      // console.error('Error sending message:', err.message);
     }
   };
-  
+  useEffect (() => {
+    socket.on('receiveMessage', (message) => {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { ...message, message: filterBadWords(message.message) } // Filter incoming message
+      ]); 
+    });
+  }, []);
+
   const deleteMessage = async (messageId) => {
     try {
         const storedToken = await AsyncStorage.getItem('jwt');
@@ -212,7 +224,7 @@ const Chatbox = ({ route }) => {
             );
         }
     } catch (err) {
-        console.error('Error deleting message:', err.message);
+        // console.error('Error deleting message:', err.message);
     }
 };
 
@@ -232,7 +244,7 @@ const Chatbox = ({ route }) => {
           {!isMyMessage && (
             <Image
               source={{ uri: item.sender?.image || 'https://via.placeholder.com/50' }}
-              onError={(e) => console.log('Image failed to load:', e.nativeEvent.error)}
+              // onError={(e) => console.log('Image failed to load:', e.nativeEvent.error)}
               style={styles.userAvatar}
             />
           )}
