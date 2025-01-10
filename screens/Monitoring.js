@@ -77,7 +77,12 @@ const MonitoringScreen = () => {
       const monitoringResponse = await axios.get(`${baseURL}Monitoring/${userId}`, {
         headers: { Authorization: `Bearer ${storedToken}` },
       });
-      setMonitorings(monitoringResponse.data);
+      const today = new Date();
+      const filteredData = monitoringResponse.data.filter(item => {
+        const finalizationDate = new Date(item.dateOfFinalization);
+        return finalizationDate > today;
+      });
+      setMonitorings(filteredData);
     } catch (err) {
       setError("Failed to fetch monitoring records.");
     } finally {
@@ -553,7 +558,13 @@ const MonitoringScreen = () => {
 
             <Text style={styles.input}>{new Date(monitoringData.dateOfPollination).toDateString()}</Text>
             <Text>Number of pollinated flowers</Text>
-            <Text style={styles.input}>{monitoringData.pollinatedFlowers}</Text>
+            <TextInput
+              value={monitoringData.pollinatedFlowers.toString()}
+              style={styles.input}
+              onChangeText={(value) => setMonitoringData({ ...monitoringData, pollinatedFlowers: parseInt(value) })}
+              placeholder="Number of Pollinated Flowers"
+              keyboardType="numeric"
+            />
 
             <TextInput
               value={monitoringData.fruitsHarvested.toString()}
@@ -561,6 +572,7 @@ const MonitoringScreen = () => {
               onChangeText={(value) => setMonitoringData({ ...monitoringData, fruitsHarvested: value })}
               placeholder="Fruits Harvested"
               keyboardType="numeric"
+              editable={false}
             />
 
             <Text style={styles.input}>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
@@ -582,6 +594,7 @@ const MonitoringScreen = () => {
               placeholder="Select Status"
               style={styles.input}
               dropDownStyle={styles.dropdown}
+              disabled={true}
             />
             <View style={styles.buttonRow}>
               <EasyButton medium primary onPress={() => {

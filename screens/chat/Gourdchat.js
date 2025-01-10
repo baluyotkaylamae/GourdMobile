@@ -146,7 +146,7 @@ const ChatScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Chats</Text>
+      {/* <Text style={styles.header}>Chats</Text> */}
 
       {/* Search Box */}
       <TextInput

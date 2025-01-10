@@ -51,6 +51,7 @@ const Login = (props) => {
     } else {
       console.error('Context or Dispatch is undefined');
     }
+    console.log('na')
   };
 
   const handleGoogleSignIn = () => {
