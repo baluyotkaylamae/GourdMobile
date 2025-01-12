@@ -69,7 +69,7 @@ const DrawerNavigator = () => {
         options={{
           headerTitle: 'Harvest',
           drawerIcon: ({ color, size }) => (
-            <Ionicons name="time-outline" size={size} color={color} />
+            <Ionicons name="leaf-outline" size={size} color={color} />
           ),
         }}
       />

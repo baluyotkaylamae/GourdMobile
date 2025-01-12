@@ -18,6 +18,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import DropDownPicker from 'react-native-dropdown-picker';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AuthGlobal from '../Context/Store/AuthGlobal';
+import { useFocusEffect } from "@react-navigation/native";
 
 const MonitoringScreen = () => {
   const context = useContext(AuthGlobal);
@@ -91,16 +92,21 @@ const MonitoringScreen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchMonitoringRecords();
-    fetchGourdData();
+  useFocusEffect(
+    React.useCallback(() => {
+      setLoading(true);
+      setError(null);
+      fetchMonitoringRecords();
+      fetchGourdData();
 
-    return () => {
-      setGourdTypes([]);
-      setGourdVarieties([]);
-      setMonitorings([]);
-    };
-  }, [userId]);
+      return () => {
+        // Cleanup if necessary
+        setGourdTypes([]);
+        setGourdVarieties([]);
+        setMonitorings([]);
+      };
+    }, [userId])
+  );
 
   useEffect(() => {
     console.log("Monitoring Data State:", monitoringData);
