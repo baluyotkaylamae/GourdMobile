@@ -10,7 +10,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { Menu, Provider } from 'react-native-paper';
 import Swiper from "react-native-swiper";
 import { filterBadWords } from './filteredwords'; // Adjust the path as necessary
-
+import CreatePost from '../screens/Post/createPost';
 
 const LandingPage = ({ navigation }) => {
   const context = useContext(AuthGlobal);
@@ -101,12 +101,12 @@ const LandingPage = ({ navigation }) => {
 
   const handleAddComment = async (postId) => {
     const filteredComment = filterBadWords(comment); // Filter the comment
-  
+
     if (filteredComment !== comment) { // If the comment was modified
       setComment(filteredComment); // Update the comment to the filtered version
       return; // Stop submission as the comment has been filtered
     }
-  
+
     try {
       const response = await fetch(`${baseURL}posts/${postId}/comments`, {
         method: 'POST',
@@ -116,7 +116,7 @@ const LandingPage = ({ navigation }) => {
         },
         body: JSON.stringify({ content: comment }),
       });
-  
+
       if (response.ok) {
         setComment('');
         triggerRefresh();
@@ -125,17 +125,17 @@ const LandingPage = ({ navigation }) => {
       Alert.alert('Error', 'Could not add comment.');
     }
   };
-  
+
   const handleAddReply = async () => {
     if (!reply) return Alert.alert('Error', 'Reply cannot be empty');
-  
+
     const filteredReply = filterBadWords(reply); // Filter the reply
-  
+
     if (filteredReply !== reply) { // If the reply was modified
       setReply(filteredReply); // Update the reply to the filtered version
       return; // Stop submission as the reply has been filtered
     }
-  
+
     try {
       const response = await fetch(`${baseURL}posts/${selectedPostId}/comments/${selectedCommentId}/replies`, {
         method: 'POST',
@@ -145,7 +145,7 @@ const LandingPage = ({ navigation }) => {
         },
         body: JSON.stringify({ content: reply }),
       });
-  
+
       if (response.ok) {
         setReply('');
         setShowReplyModal(false);
@@ -156,7 +156,7 @@ const LandingPage = ({ navigation }) => {
     }
   };
 
-  
+
   const toggleReplies = (commentId) => {
     setExpandedReplies(prev => ({ ...prev, [commentId]: !prev[commentId] }));
   };
@@ -176,7 +176,7 @@ const LandingPage = ({ navigation }) => {
     };
 
   const renderForumItem = ({ item }) => {
-    const isTopPost = item.likes === Math.max(...forums.map(post => post.likes)); 
+    const isTopPost = item.likes === Math.max(...forums.map(post => post.likes));
     return (
       <View style={[styles.forumCard, isTopPost && styles.topPostCard]}>
         {isTopPost && <Text style={styles.topPostLabel}>Trending Post</Text>}
@@ -194,10 +194,11 @@ const LandingPage = ({ navigation }) => {
 
         {/* Carousel for images */}
         {item.images && item.images.length > 0 && (
-          <View style={styles.imageContainer}>
+          <View style={{ flex: 1 }}>
             <Swiper
-              style={styles.swiper}
+              style={{ height: 200 }} // Adjust height
               showsButtons={false}
+              paginationStyle={{ bottom: 10 }} // Adjust pagination position
               autoplay
               autoplayTimeout={10}
             >
@@ -205,13 +206,19 @@ const LandingPage = ({ navigation }) => {
                 <Image
                   key={index}
                   source={{ uri: image }}
-                  style={styles.carouselImage}
-                  resizeMode="cover"
+                  style={{
+                    width: '100%',
+                    height: 200, // Adjust as needed
+                    margin: 0,
+                    padding: 0,
+                    resizeMode: 'cover',
+                  }}
                 />
               ))}
             </Swiper>
           </View>
         )}
+
 
         {/* Likes and comments section */}
         <View style={styles.likesCommentsContainer}>
@@ -460,17 +467,38 @@ const LandingPage = ({ navigation }) => {
                 <Button title="Close" onPress={() => setShowReplyModal(false)} />
               </View>
             </Modal>
+            <TouchableOpacity
+              style={styles.fab}
+              onPress={() => navigation.navigate('CreatePost')}
+            >
+              <Icon name="plus" size={24} color="#fff" />
+            </TouchableOpacity>
           </View>
         </Provider>
   );
 
 };
 const styles = StyleSheet.create({
-  carouselImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
+  carousel: {
+    flex: 1,
+    margin: 0, // Ensure no margins are set
+    padding: 0, // Ensures no overflow
   },
+
+  carouselImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderRadius: 20,
+    margin: 0, // Remove default margins
+    padding: 0, // Remove padding
+  },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 10, // Adjust as needed
+    alignSelf: 'center',
+  },
+
   likesCommentsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -504,16 +532,20 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 10,
     backgroundColor: '#E0F8E6'
   },
   forumCard: {
-    borderWidth: 2,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderRadius: 20,
     padding: 13,
     marginBottom: 10,
-    backgroundColor: "white"
+    marginLeft: 20,
+    marginRight: 20,
+    backgroundColor: "white",
+    shadowColor: "#000", // Shadow color
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset
+    shadowOpacity: 0.25, // Shadow opacity
+    shadowRadius: 3.84, // Shadow radius
+    elevation: 5,
   },
   forumTitle: {
     fontSize: 20,
@@ -542,12 +574,6 @@ const styles = StyleSheet.create({
   forumContent: {
     fontSize: 17,
     marginVertical: 10,
-  },
-  forumImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 10,
   },
   likesContainer: {
     marginBottom: 5,
@@ -644,15 +670,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  imagePlaceholder: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-    backgroundColor: '#eee',
-    marginRight: 10,
-  },
   errorText: {
     color: 'red',
     textAlign: 'center',
@@ -661,7 +678,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',  // Gold border for top post
     borderWidth: 2,
     backgroundColor: '#FFF8DC',  // Light yellow background
-    marginTop: 20, 
+    marginTop: 20,
   },
   topPostLabel: {
     position: 'absolute',
@@ -674,6 +691,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     borderRadius: 5,
     zIndex: 1, // Ensure label is above the image
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#007BFF',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
   },
 });
 
