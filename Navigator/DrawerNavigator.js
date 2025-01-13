@@ -9,6 +9,7 @@ import PastMonitoring from '../screens/PastMonitoring';
 import AuthGlobal from '../Context/Store/AuthGlobal';
 import CustomDrawerContent from './CustomDrawerContent';
 import CreatePost from '../screens/Post/createPost';
+import Dashboard from '../screens/User/DashboardScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -50,6 +51,16 @@ const DrawerNavigator = () => {
           headerTitle: 'Profile',
           drawerIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Dashboard"
+        component={Dashboard}
+        options={{
+          headerTitle: 'Dashboard',
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="bar-chart-outline" size={size} color={color} />
           ),
         }}
       />
