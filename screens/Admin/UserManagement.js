@@ -68,17 +68,17 @@ const UserManagement = ({ navigation }) => {
       alert('You are not logged in');
       return;
     }
-
+  
     try {
-      const response = await fetch(`${baseURL}users/${userId}`, {
-        method: 'PUT',
+      const response = await fetch(`${baseURL}users/${userId}/role`, {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${storedToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ isAdmin: !isAdmin })
+        body: JSON.stringify({ isAdmin: !isAdmin }), // Toggling the admin status
       });
-
+  
       if (response.ok) {
         Alert.alert('Success', 'User admin status updated', [
           { text: 'OK', onPress: () => fetchUsers() }
@@ -90,6 +90,7 @@ const UserManagement = ({ navigation }) => {
       alert('Error updating admin status');
     }
   };
+  
 
   const renderUserItem = ({ item }) => (
     <View style={styles.userItem}>
