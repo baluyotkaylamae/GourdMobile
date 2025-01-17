@@ -28,6 +28,8 @@ const LandingPage = ({ navigation }) => {
   const [refresh, setRefresh] = useState(false);
   const [images, setImages] = useState([]);
   const isAdmin = context?.user?.role === 'admin';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredForums, setFilteredForums] = useState([]);
 
   useEffect(() => {
     const fetchForums = async () => {
@@ -65,6 +67,21 @@ const LandingPage = ({ navigation }) => {
     };
     fetchForums();
   }, [refresh]);
+
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    const filtered = forums.filter(forum => {
+      const userName = forum.user?.name?.toLowerCase() || '';
+      const title = forum.title?.toLowerCase() || '';
+      const content = forum.content?.toLowerCase() || '';
+      const searchText = text.toLowerCase();
+
+      return userName.includes(searchText) ||
+        title.includes(searchText) ||
+        content.includes(searchText);
+    });
+    setFilteredForums(filtered);
+  };
 
 
   const triggerRefresh = () => setRefresh(!refresh);
@@ -448,8 +465,22 @@ const LandingPage = ({ navigation }) => {
       error ? <Text>{error}</Text> :
         <Provider>
           <View style={styles.container}>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search posts..."
+                value={searchQuery}
+                onChangeText={handleSearch}
+              />
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={() => handleSearch(searchQuery)}
+              >
+                <Icon name="search" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
             <FlatList
-              data={forums}
+              data={searchQuery ? filteredForums : forums}
               renderItem={renderForumItem}
               keyExtractor={(item) => item._id}
               onRefresh={triggerRefresh}
@@ -532,7 +563,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#E0F8E6'
+    backgroundColor: '#E0F8E6',
   },
   forumCard: {
     borderRadius: 20,
@@ -704,6 +735,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 5,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: 'transparent',
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: 10,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    height: 40,
+  },
+  searchButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 20,
+    marginLeft: 10,
+  }
 });
 
 
