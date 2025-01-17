@@ -111,7 +111,7 @@
 
 
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, TextInput, ActivityIndicator } from "react-native";
+import { View, Animated, Text, StyleSheet, Image, TouchableOpacity, Alert, TextInput, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as tf from "@tensorflow/tfjs";
 import { bundleResourceIO } from "@tensorflow/tfjs-react-native";
@@ -127,6 +127,8 @@ function GourdIdentify() {
     const [variety, setVariety] = useState("");
     const [loading, setLoading] = useState(false);
     const [model, setModel] = useState(null);
+    const [isIdentifying, setIsIdentifying] = useState(false);
+    const [showToast, setShowToast] = useState(false);
 
     useEffect(() => {
         const loadModel = async () => {
@@ -182,6 +184,7 @@ function GourdIdentify() {
     };
 
     const handleIdentify = async () => {
+        setShowToast(true);
         if (!model) {
             Alert.alert("Error", "Model is not loaded yet. Please try again.");
             return;
@@ -266,12 +269,29 @@ function GourdIdentify() {
             Alert.alert("Error", "Failed to process the image.");
         } finally {
             setLoading(false);
+            setShowToast(false);
         }
+
+    };
+
+    const handleReset = () => {
+        setImage(null);
+        setGender('');
+        setGourdType('');
+        setVariety('');
     };
 
     return (
         <View style={styles.container}>
             <View style={styles.imageContainer}>
+                {image && showToast && (
+                    <Animated.View style={styles.toastContainer}>
+                        <View style={styles.toastContent}>
+                            <ActivityIndicator size="small" color="#fff" />
+                            <Text style={styles.toastText}>Identifying your gourd...</Text>
+                        </View>
+                    </Animated.View>
+                )}
                 <TouchableOpacity
                     style={styles.imageWrapper}
                     onPress={handleImagePick}
@@ -316,6 +336,12 @@ function GourdIdentify() {
                     <TextInput style={styles.resultBox} editable={false} value={variety} />
                 </View>
             </View>
+            <TouchableOpacity
+                style={styles.resetButton}
+                onPress={handleReset}
+            >
+                <Text style={styles.resetText}>Reset All</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -403,6 +429,43 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#333333",
     },
+
+    toastContainer: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        right: 20,
+        zIndex: 9999,
+        elevation: 5,
+    },
+    toastContent: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        borderRadius: 25,
+        padding: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+    },
+    toastText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    resetButton: {
+        backgroundColor: '#dc3545',
+        padding: 15,
+        borderRadius: 25,
+        marginTop: 20,
+        alignSelf: 'center',
+        width: '80%',
+    },
+    resetText: {
+        color: '#fff',
+        textAlign: 'center',
+        fontSize: 16,
+        fontWeight: 'bold',
+    }
 });
 
 export default GourdIdentify;
