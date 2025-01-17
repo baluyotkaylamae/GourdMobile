@@ -311,17 +311,26 @@ function GourdIdentify() {
                     )}
                 </TouchableOpacity>
             </View>
-            <TouchableOpacity
-                style={styles.identifyButton}
-                onPress={handleIdentify}
-                disabled={loading || !model}
-            >
-                {loading ? (
-                    <ActivityIndicator color="white" />
-                ) : (
-                    <Text style={styles.identifyText}>Identify</Text>
-                )}
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                    style={styles.identifyButton}
+                    onPress={handleIdentify}
+                    disabled={loading || !model}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={styles.identifyText}>Identify</Text>
+                    )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.resetButton}
+                    onPress={handleReset}
+                >
+                    <Text style={styles.resetText}>Reset</Text>
+                </TouchableOpacity>
+            </View>
             <View style={styles.resultContainer}>
                 <View style={styles.resultRow}>
                     <Text style={styles.resultLabel}>Gender:</Text>
@@ -336,12 +345,7 @@ function GourdIdentify() {
                     <TextInput style={styles.resultBox} editable={false} value={variety} />
                 </View>
             </View>
-            <TouchableOpacity
-                style={styles.resetButton}
-                onPress={handleReset}
-            >
-                <Text style={styles.resetText}>Reset All</Text>
-            </TouchableOpacity>
+
         </View>
     );
 }
@@ -393,17 +397,25 @@ const styles = StyleSheet.create({
         color: "white",
         fontWeight: "bold",
     },
-    identifyButton: {
-        backgroundColor: "#4CAF50",
-        paddingVertical: 15,
-        borderRadius: 10,
-        alignItems: "center",
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
         marginTop: 20,
+        gap: 10,
+    },
+    identifyButton: {
+        flex: 1,
+        backgroundColor: '#5cb85c',
+        padding: 15,
+        borderRadius: 25,
+        alignItems: 'center',
     },
     identifyText: {
-        color: "white",
-        fontWeight: "bold",
+        color: '#fff',
+        textAlign: 'center',
         fontSize: 16,
+        fontWeight: 'bold',
     },
     resultContainer: {
         marginTop: 20,
@@ -453,12 +465,11 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     resetButton: {
+        flex: 1,
         backgroundColor: '#dc3545',
         padding: 15,
         borderRadius: 25,
-        marginTop: 20,
-        alignSelf: 'center',
-        width: '80%',
+        alignItems: 'center',
     },
     resetText: {
         color: '#fff',
