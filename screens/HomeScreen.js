@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#E0F8E6',
+    backgroundColor: '#F2F2F2',
   },
   forumCard: {
     borderRadius: 20,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
   topPostCard: {
     borderColor: '#FFD700',  // Gold border for top post
     borderWidth: 2,
-    backgroundColor: '#FFF8DC',  // Light yellow background
+    backgroundColor: '#FFFFFF',  // Light yellow background
     marginTop: 20,
   },
   topPostLabel: {

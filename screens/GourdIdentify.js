@@ -353,7 +353,7 @@ function GourdIdentify() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#E0F8E6",
+        backgroundColor: "#FFFFFF",
         padding: 20,
         justifyContent: "flex-start", // Align content at the top
     },

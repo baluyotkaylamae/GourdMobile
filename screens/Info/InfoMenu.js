@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: "#E0F8E6",
+        backgroundColor: "#FFFFFF",
     },
     header: {
         fontSize: 26,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
         fontFamily: "serif",
     },
     card: {
-        backgroundColor: "#F3F9F4",
+        backgroundColor: "#FFFFFF",
         paddingVertical: 15,
         paddingHorizontal: 15,
         borderRadius: 15,
