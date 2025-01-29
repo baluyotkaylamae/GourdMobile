@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList,Alert  } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import EasyButton from "../../Shared/StyledComponents/EasyButton";
 import FormContainer from "../../Shared/Form/FormContainer";
@@ -109,17 +109,22 @@ const CreatePost = () => {
 
       const res = await axios.post(`${baseURL}posts`, formData, config);
       if (res.status === 201) {
-        Toast.show({
-          topOffset: 60,
-          type: "success",
-          text1: "Post Created Successfully",
-          text2: "Your post has been submitted.",
-        });
+        // Toast.show({
+        //   topOffset: 60,
+        //   type: "success",
+        //   text1: "Post Created Successfully",
+        //   text2: "Your post has been submitted.",
+        // });
+        Alert.alert(
+          "Submitting Post",
+          "Your post is being submitted. Wait for the approval of the admin.",
+          [{ text: "OK" }]
+        );
 
         // Clear the input fields
-        setTitle(''); 
+        setTitle('');
         setContent('');
-        setSelectedCategory(null); 
+        setSelectedCategory(null);
         setImages([]); // Clear images
         setTimeout(() => {
           navigation.navigate("Home");
@@ -143,7 +148,7 @@ const CreatePost = () => {
       data={[{}]}
       keyExtractor={(item, index) => index.toString()}
       renderItem={() => (
-        <View  style={styles.container}>
+        <View style={styles.container}>
           <HeaderReg />
           <FormContainer>
             <InputUser

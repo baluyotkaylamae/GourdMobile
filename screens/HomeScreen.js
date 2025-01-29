@@ -192,6 +192,8 @@ const LandingPage = ({ navigation }) => {
       });
     };
 
+
+  const approvedForums = forums.filter(post => post.status === "Approved");
   const renderForumItem = ({ item }) => {
     const isTopPost = item.likes === Math.max(...forums.map(post => post.likes));
     return (
@@ -480,7 +482,7 @@ const LandingPage = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             <FlatList
-              data={searchQuery ? filteredForums : forums}
+             data={searchQuery ? filteredForums.filter(post => post.status === "Approved") : forums.filter(post => post.status === "Approved")}
               renderItem={renderForumItem}
               keyExtractor={(item) => item._id}
               onRefresh={triggerRefresh}

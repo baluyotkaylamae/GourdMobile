@@ -213,111 +213,129 @@ const UserProfile = ({ navigation }) => {
         }
     };
 
-
-    const renderForumItem = ({ item }) => (
-        <View style={styles.forumCard}>
-            <View style={styles.userContainer}>
-                {item.user?.image ? (
-                    <Image source={{ uri: item.user.image }} style={styles.userImage} />
-                ) : (
-                    <Text>No profile image</Text>
-                )}
-                <Text style={styles.forumUser}>{item.user?.name || 'Unknown'}</Text>
-            </View>
-            <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
-            <Text style={styles.forumTitle}>{item.title}</Text>
-            <Text style={styles.forumContent}>{item.content}</Text>
+    const renderForumItem = ({ item }) => {
+        const getStatusColor = (status) => {
+            switch (status) {
+                case 'Approved':
+                    return 'green';
+                case 'Rejected':
+                    return 'red';
+                case 'Pending':
+                    return 'orange';
+                default:
+                    return 'black'; // Default color if status is unknown
+            }
+        };
     
-            {/* Ellipsis Icon Positioned to the Upper Left Corner */}
-            <TouchableOpacity
-                onPress={() => {
-                    setSelectedPost(item); // Set the current post
-                    setActionModalVisible(true); // Show the modal
-                }}
-                style={styles.ellipsisIconContainer}
-            >
-                <Icon name="ellipsis-h" size={20} color="#007AFF" />
-            </TouchableOpacity>
-    
-            {item.images.length > 0 && (
-                <Image source={{ uri: item.images[0] }} style={styles.forumImage} />
-            )}
-            <View style={styles.likesCommentsContainer}>
-                <TouchableOpacity style={styles.likeButton} onPress={() => handleLikePost(item._id)}>
-                    <Icon name="thumbs-up" size={16} color="#007AFF" style={styles.likeIcon} />
-                    <Text style={styles.likesText}>{item.likes} Likes</Text>
+        return (
+            <View style={styles.forumCard}>
+                <View style={styles.userContainer}>
+                    {item.user?.image ? (
+                        <Image source={{ uri: item.user.image }} style={styles.userImage} />
+                    ) : (
+                        <Text>No profile image</Text>
+                    )}
+                    <Text style={styles.forumUser}>{item.user?.name || 'Unknown'}</Text>
+                </View>
+                <Text style={styles.forumDate}>{new Date(item.createdAt).toLocaleString()}</Text>
+                {/* Apply the color based on the status */}
+                <Text style={[styles.postStatus, { color: getStatusColor(item.status) }]}>
+                    {item.status}
+                </Text>
+                <Text style={styles.forumTitle}>{item.title}</Text>
+                <Text style={styles.forumContent}>{item.content}</Text>
+        
+                {/* Ellipsis Icon Positioned to the Upper Left Corner */}
+                <TouchableOpacity
+                    onPress={() => {
+                        setSelectedPost(item); // Set the current post
+                        setActionModalVisible(true); // Show the modal
+                    }}
+                    style={styles.ellipsisIconContainer}
+                >
+                    <Icon name="ellipsis-h" size={20} color="#007AFF" />
                 </TouchableOpacity>
-                <View style={styles.divider} />
-                <Text style={styles.commentCountText}>{item.comments.length} Comments</Text>
-            </View>
-            <View style={styles.commentsContainer}>
-                <Text style={styles.commentsHeader}>Comments:</Text>
-                {item.comments.map((comment, index) => {
-                    if (!expandedComments[item._id] && index >= 1) return null;
-                    return (
-                        <View key={comment._id} style={styles.comment}>
-                            {comment.user?.image && (
-                                <Image source={{ uri: comment.user.image }} style={styles.commentUserImage} />
-                            )}
-                            <View style={styles.commentTextContainer}>
-                                <Text style={styles.commentUser}>{comment.user?.name || 'Anonymous'}</Text>
-                                <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleString()}</Text>
-                                <Text style={styles.commentContent}>{comment.content}</Text>
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        setSelectedPostId(item._id);
-                                        setSelectedCommentId(comment._id);
-                                        setShowReplyModal(true);
-                                    }}
-                                >
-                                    <Text style={styles.replyLink}>Reply</Text>
-                                </TouchableOpacity>
-                                {comment.replies && comment.replies.length > 0 && (
-                                    <View style={styles.repliesContainer}>
-                                        {comment.replies
-                                            .slice(0, expandedReplies[comment._id] ? comment.replies.length : 1)
-                                            .map((reply) => (
-                                                <View key={reply._id} style={styles.reply}>
-                                                    {reply.user?.image && (
-                                                        <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
-                                                    )}
-                                                    <View style={styles.replyTextContainer}>
-                                                        <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
-                                                        <Text style={styles.replyDate}>
-                                                            {new Date(reply.createdAt).toLocaleString()}
-                                                        </Text>
-                                                        <Text style={styles.replyContent}>{reply.content}</Text>
-                                                    </View>
-                                                </View>
-                                            ))}
-                                        <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
-                                            <Text style={styles.show}>
-                                                {expandedReplies[comment._id] ? 'Hide Replies' : 'Show More Replies'}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                    );
-                })}
-                {item.comments.length > 2 && (
-                    <TouchableOpacity onPress={() => toggleComments(item._id)}>
-                        <Text style={styles.show}>{expandedComments[item._id] ? 'See Less Comments' : 'See More Comments'}</Text>
-                    </TouchableOpacity>
+        
+                {item.images.length > 0 && (
+                    <Image source={{ uri: item.images[0] }} style={styles.forumImage} />
                 )}
-                <View style={styles.commentInputContainer}>
-                    <TextInput
-                        style={styles.commentInput}
-                        placeholder="Add a comment..."
-                        value={comment}
-                        onChangeText={setComment}
-                    />
-                    <Button title="Comment" onPress={() => handleAddComment(item._id)} />
+                <View style={styles.likesCommentsContainer}>
+                    <TouchableOpacity style={styles.likeButton} onPress={() => handleLikePost(item._id)}>
+                        <Icon name="thumbs-up" size={16} color="#007AFF" style={styles.likeIcon} />
+                        <Text style={styles.likesText}>{item.likes} Likes</Text>
+                    </TouchableOpacity>
+                    <View style={styles.divider} />
+                    <Text style={styles.commentCountText}>{item.comments.length} Comments</Text>
+                </View>
+                <View style={styles.commentsContainer}>
+                    <Text style={styles.commentsHeader}>Comments:</Text>
+                    {item.comments.map((comment, index) => {
+                        if (!expandedComments[item._id] && index >= 1) return null;
+                        return (
+                            <View key={comment._id} style={styles.comment}>
+                                {comment.user?.image && (
+                                    <Image source={{ uri: comment.user.image }} style={styles.commentUserImage} />
+                                )}
+                                <View style={styles.commentTextContainer}>
+                                    <Text style={styles.commentUser}>{comment.user?.name || 'Anonymous'}</Text>
+                                    <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleString()}</Text>
+                                    <Text style={styles.commentContent}>{comment.content}</Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setSelectedPostId(item._id);
+                                            setSelectedCommentId(comment._id);
+                                            setShowReplyModal(true);
+                                        }}
+                                    >
+                                        <Text style={styles.replyLink}>Reply</Text>
+                                    </TouchableOpacity>
+                                    {comment.replies && comment.replies.length > 0 && (
+                                        <View style={styles.repliesContainer}>
+                                            {comment.replies
+                                                .slice(0, expandedReplies[comment._id] ? comment.replies.length : 1)
+                                                .map((reply) => (
+                                                    <View key={reply._id} style={styles.reply}>
+                                                        {reply.user?.image && (
+                                                            <Image source={{ uri: reply.user.image }} style={styles.replyUserImage} />
+                                                        )}
+                                                        <View style={styles.replyTextContainer}>
+                                                            <Text style={styles.replyUser}>{reply.user?.name || 'Anonymous'}</Text>
+                                                            <Text style={styles.replyDate}>
+                                                                {new Date(reply.createdAt).toLocaleString()}
+                                                            </Text>
+                                                            <Text style={styles.replyContent}>{reply.content}</Text>
+                                                        </View>
+                                                    </View>
+                                                ))}
+                                            <TouchableOpacity onPress={() => toggleReplies(comment._id)}>
+                                                <Text style={styles.show}>
+                                                    {expandedReplies[comment._id] ? 'Hide Replies' : 'Show More Replies'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+                        );
+                    })}
+                    {item.comments.length > 2 && (
+                        <TouchableOpacity onPress={() => toggleComments(item._id)}>
+                            <Text style={styles.show}>{expandedComments[item._id] ? 'See Less Comments' : 'See More Comments'}</Text>
+                        </TouchableOpacity>
+                    )}
+                    <View style={styles.commentInputContainer}>
+                        <TextInput
+                            style={styles.commentInput}
+                            placeholder="Add a comment..."
+                            value={comment}
+                            onChangeText={setComment}
+                        />
+                        <Button title="Comment" onPress={() => handleAddComment(item._id)} />
+                    </View>
                 </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         loading ? (
@@ -499,6 +517,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomWidth: 1,
         borderColor: '#ccc',
+    },
+    postStatus: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#FF6347', // You can change this to a color that fits your app's theme
+        marginVertical: 5,
     },
     
 });

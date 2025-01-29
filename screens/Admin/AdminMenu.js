@@ -26,6 +26,10 @@ const AdminMenu = ({ navigation }) => {
             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Dashboard")}>
                 <Text style={styles.buttonText}>Dashboard</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("PostManagement")}>
+                <Text style={styles.buttonText}>Post Management</Text>
+            </TouchableOpacity>
         </View>
     );
 };

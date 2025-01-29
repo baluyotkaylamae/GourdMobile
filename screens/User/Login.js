@@ -79,9 +79,9 @@ const Login = (props) => {
         value={password}
         onChangeText={(text) => setPassword(text)}
       />
-      <TouchableOpacity onPress={() => navigation.navigate("ForgetPassword")}>
+      {/* <TouchableOpacity onPress={() => navigation.navigate("ForgetPassword")}>
         <Text style={styles.forgetPassword}>Forget Your Password?</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       <View style={styles.buttonGroup}>
         {error ? <Error message={error} /> : null}
         <EasyButton

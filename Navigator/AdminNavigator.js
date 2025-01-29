@@ -7,6 +7,7 @@ import GourdType from "../screens/Admin/Monitoring/CreateGourdType";
 import GourdVariety from "../screens/Admin/Monitoring/CreateGourdVariety";
 import Dashboard from "../screens/Admin/Dashboard";
 import Users from "../screens/Admin/UserManagement";
+import PostManager from "../screens/Admin/PostManagements";
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,7 @@ const AdminNavigator = () => {
             {/* Uncomment and add the following as needed */}
             <Stack.Screen name="Users" component={Users} />
             <Stack.Screen name="Dashboard" component={Dashboard} />
+            <Stack.Screen name="PostManagement" component={PostManager} />
         </Stack.Navigator>
     );
 };
