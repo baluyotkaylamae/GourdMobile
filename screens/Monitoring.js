@@ -7,8 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  TextInput,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import EasyButton from "../Shared/StyledComponents/EasyButton";
 import baseURL from "../assets/common/baseurl";
@@ -19,6 +19,9 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AuthGlobal from '../Context/Store/AuthGlobal';
 import { useFocusEffect } from "@react-navigation/native";
+import * as ImagePicker from 'expo-image-picker';
+import mime from "mime";
+import Toast from "react-native-toast-message";
 
 const MonitoringScreen = () => {
   const context = useContext(AuthGlobal);
@@ -35,7 +38,6 @@ const MonitoringScreen = () => {
   const [datePickerVisible, setDatePickerVisible] = useState(null); // 'pollination' or 'finalization'
   const [GourdTypeOpen, setGourdTypeOpen] = useState(false);
   const [VarietyOpen, setVarietyOpen] = useState(false);
-  const [StatusOpen, setStatusOpen] = useState(false);
   const [selectedGourdType, setSelectedGourdType] = useState(null);
 
   const [monitoringData, setMonitoringData] = useState({
@@ -43,7 +45,9 @@ const MonitoringScreen = () => {
     variety: "",
     dateOfPollination: new Date(),
     pollinatedFlowers: 0,
-    fruitsHarvested: "",
+    pollinatedFlowerImages: [], // Ensure this is an array
+    fruitsHarvested: 0,
+    fruitHarvestedImages: [], // Ensure this is an array
     dateOfFinalization: new Date(),
     status: "In Progress",
   });
@@ -53,6 +57,21 @@ const MonitoringScreen = () => {
     { label: "Completed", value: "Completed" },
     { label: "Failed", value: "Failed" },
   ];
+
+  const pickImage = async (field) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setMonitoringData((prev) => ({
+        ...prev,
+        [field]: [...(prev[field] || []), result.assets[0].uri], // Access the first selected asset
+      }));
+    }
+  };
 
   const fetchGourdData = async () => {
     const storedToken = await AsyncStorage.getItem("jwt");
@@ -135,80 +154,142 @@ const MonitoringScreen = () => {
       return;
     }
 
-    const newMonitoring = {
-      userID: userId,
-      gourdType: monitoringData.gourdType._id,
-      variety: monitoringData.variety._id,
-      dateOfPollination: monitoringData.dateOfPollination || new Date(),
-      pollinatedFlowers: monitoringData.pollinatedFlowers,
-      fruitsHarvested: monitoringData.fruitsHarvested,
-      dateOfFinalization: monitoringData.dateOfFinalization || new Date(),
-      status: monitoringData.status,
-    };
+    const storedToken = await AsyncStorage.getItem("jwt");
+    if (!storedToken) {
+      console.error("No token found in AsyncStorage");
+      return;
+    }
+
+    let formData = new FormData();
+    formData.append("userID", userId);
+    formData.append("gourdType", monitoringData.gourdType._id);
+    formData.append("variety", monitoringData.variety._id);
+    formData.append("dateOfPollination", monitoringData.dateOfPollination ? new Date(monitoringData.dateOfPollination).toISOString() : new Date().toISOString());
+    formData.append("pollinatedFlowers", monitoringData.pollinatedFlowers);
+    formData.append("fruitsHarvested", monitoringData.fruitsHarvested);
+    formData.append("dateOfFinalization", monitoringData.dateOfFinalization ? new Date(monitoringData.dateOfFinalization).toISOString() : new Date().toISOString());
+    formData.append("status", monitoringData.status);
+
+    // Append pollinated flower images
+    (monitoringData.pollinatedFlowerImages || []).forEach((imageUri, index) => {
+      if (imageUri) {
+        const newImageUri = `file:///${imageUri.split("file:/").join("")}`;
+        formData.append("pollinatedFlowerImages", {
+          uri: newImageUri,
+          type: mime.getType(newImageUri) || 'image/jpeg',
+          name: `pollinated_flower_${index}.jpg`,
+        });
+      }
+    });
+
+    // Append fruit harvested images
+    (monitoringData.fruitHarvestedImages || []).forEach((imageUri, index) => {
+      if (imageUri) {
+        const newImageUri = `file:///${imageUri.split("file:/").join("")}`;
+        formData.append("fruitHarvestedImages", {
+          uri: newImageUri,
+          type: mime.getType(newImageUri) || 'image/jpeg',
+          name: `fruit_harvested_${index}.jpg`,
+        });
+      }
+    });
 
     try {
-      const storedToken = await AsyncStorage.getItem("jwt");
-      const response = await axios.post(`${baseURL}Monitoring`, newMonitoring, {
+      const config = {
         headers: {
-          'Authorization': `Bearer ${storedToken}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${storedToken}`,
         },
-      });
-
-      const createdMonitoring = {
-        ...response.data,
-        gourdType: gourdTypes.find((gourd) => gourd._id === response.data.gourdType),
-        variety: gourdVarieties.find((variety) => variety._id === response.data.variety),
       };
 
-      setMonitorings([...monitorings, createdMonitoring]);
-      setCreateModalVisible(false);
-      resetMonitoringData();
-      await fetchGourdData(); // Fetch updated gourd types and varieties
-    } catch (err) {
-      setError("Error creating monitoring");
+      const res = await axios.post(`${baseURL}Monitoring`, formData, config);
+      if (res.status === 201) {
+        Toast.show({
+          topOffset: 60,
+          type: "success",
+          text1: "Monitoring Record Created",
+          text2: "Your monitoring data has been saved.",
+        });
+
+        // Clear form fields after successful submission
+        setMonitoringData({
+          gourdType: "",
+          variety: "",
+          dateOfPollination: new Date(),
+          pollinatedFlowers: 0,
+          pollinatedFlowerImages: [],
+          fruitsHarvested: "",
+          fruitHarvestedImages: [],
+          dateOfFinalization: new Date(),
+          status: "In Progress",
+        });
+
+        setTimeout(() => {
+          setCreateModalVisible(false);
+          fetchMonitoringRecords();
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Error adding monitoring record:', error.message);
+      Toast.show({
+        position: 'bottom',
+        bottomOffset: 20,
+        type: "error",
+        text1: "Error Adding Monitoring Record",
+        text2: error.response?.data?.message || "Please try again",
+      });
     }
   };
 
-  const updateMonitoring = async () => {
-    if (!monitoringData.gourdType) return;
 
-    const updatedMonitoring = {
-      gourdType: monitoringData.gourdType._id,
-      variety: monitoringData.variety._id,
-      dateOfPollination: monitoringData.dateOfPollination || new Date(),
-      pollinatedFlowers: monitoringData.pollinatedFlowers,
-      fruitsHarvested: monitoringData.fruitsHarvested,
-      dateOfFinalization: monitoringData.dateOfFinalization || new Date(),
-      status: monitoringData.status,
-    };
+  // Function to update monitoring with images
+  const updateMonitoring = async (id) => {
+    console.log("Monitoring ID:", id);
+    if (!id) {
+      console.error("ID is required for updating the monitoring record.");
+      return;
+    }
+    const storedToken = await AsyncStorage.getItem("jwt");
+    const formData = new FormData();
 
+    // Determine status based on fruitsHarvested
+    const status = monitoringData.fruitsHarvested > 0 ? "Completed" : "Failed";
+
+    formData.append("fruitsHarvested", monitoringData.fruitsHarvested);
+    formData.append("dateOfFinalization", monitoringData.dateOfFinalization ? new Date(monitoringData.dateOfFinalization).toISOString() : new Date().toISOString());
+    formData.append("status", status); // Updated status logic
+
+    // Append new pollinated flower images
+    // Append fruit harvested images
+    (monitoringData.fruitHarvestedImages || []).forEach((imageUri, index) => {
+      if (imageUri) {
+        const newImageUri = `file:///${imageUri.split("file:/").join("")}`;
+        formData.append("fruitHarvestedImages", {
+          uri: newImageUri,
+          type: mime.getType(newImageUri) || 'image/jpeg',
+          name: `fruit_harvested_${index}.jpg`,
+        });
+      }
+    });
     try {
-      const storedToken = await AsyncStorage.getItem("jwt");
-      const response = await axios.put(
-        `${baseURL}Monitoring/${monitoringData._id}`,
-        updatedMonitoring,
-        {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        }
+      const response = await axios.put(`${baseURL}Monitoring/${id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const updatedMonitorings = monitorings.map((item) =>
+        item._id === id ? { ...response.data } : item
       );
-      setMonitorings(
-        monitorings.map((monitoring) =>
-          monitoring._id === response.data._id
-            ? {
-              ...response.data,
-              gourdType: gourdTypes.find((gourd) => gourd._id === response.data.gourdType),
-              variety: gourdVarieties.find((variety) => variety._id === response.data.variety),
-            }
-            : monitoring
-        )
-      );
-      setModalVisible(false);
-      resetMonitoringData();
+
+      setMonitorings(updatedMonitorings);
     } catch (err) {
       setError("Error updating monitoring");
     }
   };
+
+
 
   const deleteMonitoring = async (id) => {
     try {
@@ -458,33 +539,16 @@ const MonitoringScreen = () => {
                 <Text>+</Text>
               </TouchableOpacity>
             </View>
+            <Text>Pollinated Flower Images</Text>
+            <View style={styles.imageContainer}>
+              {monitoringData.pollinatedFlowerImages?.map((image, index) => (
+                <Image key={index} source={{ uri: image }} style={styles.imagePreview} />
+              ))}
+              <TouchableOpacity style={styles.uploadButton} onPress={() => pickImage('pollinatedFlowerImages')}>
+                <Text style={styles.uploadText}>+ Add Image</Text>
+              </TouchableOpacity>
+            </View>
 
-            <TextInput
-              value="0"
-              style={styles.input}
-              editable={false}
-              placeholder="Fruits Harvested"
-            />
-            <Text style={styles.input}>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
-            <DropDownPicker
-              open={StatusOpen}
-              value="In Progress"
-              items={statusOptions}
-              setOpen={setStatusOpen}
-              setValue={(callbackOrValue) => {
-                const value = typeof callbackOrValue === "function"
-                  ? callbackOrValue("In Progress")
-                  : callbackOrValue;
-                setMonitoringData((prevState) => ({
-                  ...prevState,
-                  status: value,
-                }));
-              }}
-              placeholder="Select Status"
-              style={styles.input}
-              dropDownStyle={styles.dropdown}
-              disabled={true} // Disable the dropdown
-            />
             <View style={styles.buttonRow}>
               <EasyButton medium primary onPress={addMonitoring}>
                 <Text style={{ color: "white", fontWeight: "bold" }}>Create</Text>
@@ -513,105 +577,50 @@ const MonitoringScreen = () => {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <DropDownPicker
-              open={GourdTypeOpen}
-              value={monitoringData.gourdType._id}
-              items={gourdTypes.map((gourd) => ({
-                label: gourd.name,
-                value: gourd._id,
-              }))}
-              setOpen={setGourdTypeOpen}
-              setValue={(callbackOrValue) => {
-                const value = typeof callbackOrValue === "function"
-                  ? callbackOrValue(monitoringData.gourdType._id)
-                  : callbackOrValue;
-                setMonitoringData((prevState) => ({
-                  ...prevState,
-                  gourdType: gourdTypes.find((gourd) => gourd._id === value),
-                  variety: null,
-                }));
-              }}
-              placeholder="Select Gourd Type"
-              style={styles.input}
-              dropDownStyle={styles.dropdown}
-              disabled={true} // Disable the dropdown
-            />
 
-            <DropDownPicker
-              open={VarietyOpen}
-              value={monitoringData.variety._id}
-              items={gourdVarieties
-                .filter((variety) => variety.gourdType._id === monitoringData.gourdType._id)
-                .map((variety) => ({
-                  label: variety.name,
-                  value: variety._id,
-                }))}
-              setOpen={setVarietyOpen}
-              setValue={(callbackOrValue) => {
-                const value = typeof callbackOrValue === "function"
-                  ? callbackOrValue(monitoringData.variety._id)
-                  : callbackOrValue;
-                setMonitoringData((prevState) => ({
-                  ...prevState,
-                  variety: gourdVarieties.find((variety) => variety._id === value),
-                }));
-              }}
-              placeholder="Select Gourd Variety"
-              style={styles.input}
-              dropDownStyle={styles.dropdown}
-              disabled={true} // Disable the dropdown
-            />
+            <Text>Fruits Harvested</Text>
+            <View style={styles.counterContainer}>
+              <TouchableOpacity
+                style={styles.counterButton}
+                onPress={() => setMonitoringData({ ...monitoringData, fruitsHarvested: Math.max(0, monitoringData.fruitsHarvested - 1) })}
+              >
+                <Text>-</Text>
+              </TouchableOpacity>
+              <Text>{monitoringData.fruitsHarvested}</Text>
+              <TouchableOpacity
+                style={styles.counterButton}
+                onPress={() => setMonitoringData({ ...monitoringData, fruitsHarvested: monitoringData.fruitsHarvested + 1 })}
+              >
+                <Text>+</Text>
+              </TouchableOpacity>
+            </View>
 
-            <Text style={styles.input}>{new Date(monitoringData.dateOfPollination).toDateString()}</Text>
-            <Text>Number of pollinated flowers</Text>
-            <TextInput
-              value={monitoringData.pollinatedFlowers.toString()}
+            <Text>Fruits Harvested Images</Text>
+            <View style={styles.imageContainer}>
+              {monitoringData.fruitHarvestedImages?.map((image, index) => (
+                <Image key={index} source={{ uri: image }} style={styles.imagePreview} />
+              ))}
+              <TouchableOpacity style={styles.uploadButton} onPress={() => pickImage('fruitHarvestedImages')}>
+                <Text style={styles.uploadText}>+ Add Image</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
               style={styles.input}
-              onChangeText={(value) => setMonitoringData({ ...monitoringData, pollinatedFlowers: parseInt(value) })}
-              placeholder="Number of Pollinated Flowers"
-              keyboardType="numeric"
-            />
-
-            <TextInput
-              value={monitoringData.fruitsHarvested.toString()}
-              style={styles.input}
-              onChangeText={(value) => setMonitoringData({ ...monitoringData, fruitsHarvested: value })}
-              placeholder="Fruits Harvested"
-              keyboardType="numeric"
-              editable={false}
-            />
-
-            <Text style={styles.input}>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
-
-            <DropDownPicker
-              open={StatusOpen}
-              value={monitoringData.status}
-              items={statusOptions}
-              setOpen={setStatusOpen}
-              setValue={(callbackOrValue) => {
-                const value = typeof callbackOrValue === "function"
-                  ? callbackOrValue(monitoringData.status)
-                  : callbackOrValue;
-                setMonitoringData((prevState) => ({
-                  ...prevState,
-                  status: value,
-                }));
-              }}
-              placeholder="Select Status"
-              style={styles.input}
-              dropDownStyle={styles.dropdown}
-              disabled={true}
-            />
+              onPress={() => setDatePickerVisible("Finalization")}
+            >
+              <Text style={styles.input}>{new Date(monitoringData.dateOfFinalization).toDateString()}</Text>
+            </TouchableOpacity>
             <View style={styles.buttonRow}>
               <EasyButton medium primary onPress={() => {
                 if (parseInt(monitoringData.fruitsHarvested) > monitoringData.pollinatedFlowers) {
                   Alert.alert("Error", "Fruits harvested cannot exceed the number of pollinated flowers.");
                 } else {
-                  updateMonitoring();
+                  updateMonitoring(monitoringData._id);  // Pass the ID here
                 }
               }}>
                 <Text style={{ color: "white", fontWeight: "bold" }}>Update</Text>
               </EasyButton>
+
               <EasyButton medium danger onPress={handleModalClose}>
                 <Text style={{ color: "white", fontWeight: "bold" }}>Cancel</Text>
               </EasyButton>
@@ -695,6 +704,27 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: "red",
     marginLeft: 10,
+  },
+  imageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  imagePreview: {
+    width: 80,
+    height: 80,
+    marginRight: 10,
+    borderRadius: 5,
+  },
+  uploadButton: {
+    padding: 10,
+    backgroundColor: '#ddd',
+    borderRadius: 5,
+  },
+  uploadText: {
+    fontSize: 16,
+    color: '#555',
   },
 });
 

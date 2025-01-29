@@ -139,7 +139,7 @@ function GourdIdentify() {
                 console.log("TensorFlow is ready.");
                 console.log("Loading model...");
                 const model = await tf.loadLayersModel(
-                    "https://raw.githubusercontent.com/baluyotkaylamae/gourdTest/main/model.json"
+                    "https://raw.githubusercontent.com/baluyotkaylamae/Gourd2.0/refs/heads/main/model.json"
                 );
                 console.log("Model loaded successfully.");
                 setModel(model);
@@ -239,27 +239,37 @@ function GourdIdentify() {
                 case 0:
                     setGender("Male");
                     setGourdType("Bitter Gourd");
-                    setVariety("Variety 1");
+                    setVariety("Bilog");
                     break;
                 case 1:
                     setGender("Female");
                     setGourdType("Bitter Gourd");
-                    setVariety("Variety 1");
+                    setVariety("Bilog");
                     break;
                 case 2:
                     setGender("Male");
                     setGourdType("Sponge Gourd");
-                    setVariety("Variety 2");
+                    setVariety("smooth");
                     break;
                 case 3:
                     setGender("Female");
                     setGourdType("Sponge Gourd");
-                    setVariety("Variety 2");
+                    setVariety("smooth");
                     break;
                 case 4:
                     setGender("Male");
                     setGourdType("Bottle Gourd");
                     setVariety("Variety 1");
+                    break;
+                case 5:
+                    setGender("Male");
+                    setGourdType("Bitter Gourd");
+                    setVariety("Bilog");
+                    break;
+                case 6:
+                    setGender("Female");
+                    setGourdType("Bitter Gourd");
+                    setVariety("Bilog");
                     break;
                 default:
                     Alert.alert("Error", "Unable to identify the image.");
