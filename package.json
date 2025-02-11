@@ -31,7 +31,6 @@
     "core-js": "^3.38.1",
     "date-fns": "^4.1.0",
     "expo": "^51.0.0",
-    "expo-app-loading": "^2.1.1",
     "expo-asset": "~10.0.10",
     "expo-auth-session": "^5.5.2",
     "expo-camera": "~15.0.16",

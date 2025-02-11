@@ -8,13 +8,9 @@
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/logoNBG.png",
-      "resizeMode": "center",
+      "resizeMode": "contain",
       "backgroundColor": "#fff"
     },
-    "permissions": [
-      "CAMERA",
-      "CAMERA_ROLL"
-    ],
     "ios": {
       "supportsTablet": true
     },
